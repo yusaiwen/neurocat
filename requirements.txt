@@ -1,0 +1,8 @@
+brainspace==0.1.10
+deprecation==2.1.0
+matplotlib==3.8.3
+nibabel==5.2.1
+numpy==1.26.4
+PyYAML==6.0.1
+surfplot==0.2.0
+toml==0.10.2

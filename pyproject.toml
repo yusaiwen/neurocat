@@ -1,0 +1,28 @@
+[project]
+name = "neurocat"
+version = "0.1.0"
+description = "an fmri surface processing and visualization software by ailurophil"
+authors = [
+    {name = "ysw", email = "yusaiwen@mail.bnu.edu.cn"},
+]
+dependencies = [
+    "brainspace==0.1.10",
+    "deprecation==2.1.0",
+    "matplotlib==3.8.3",
+    "nibabel==5.2.1",
+    "numpy==1.26.4",
+    "PyYAML==6.0.1",
+    "surfplot==0.2.0",
+    "toml==0.10.2",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true

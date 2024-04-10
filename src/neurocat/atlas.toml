@@ -1,0 +1,9 @@
+[atlas]
+ATLAS = ["glasser2016",
+         "schaefer2018",
+         "yeo2011",
+         "gorden2016"]
+glasser2016 = "atlas/Glasser2016/Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii"
+gorden2016 = "atlas/gorden2016/Gordon333.32k_fs_LR.dlabel.nii"
+schaefer2018 = "atlas/Schaefer2018"
+yeo2011 = "atlas/Yeo2011"
