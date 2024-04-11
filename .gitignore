@@ -2,3 +2,4 @@ src/neurocat/__pycache__/
 src/neurocat/deprecated/
 src/neurocat/.idea/
 src/neurocat/*.pyc
+*DS_Store
