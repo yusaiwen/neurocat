@@ -145,6 +145,16 @@ def gen_cii(data) -> nib.Cifti2Image:
     """
     Generate scalar cifti2 object for eigher hemiphere or both hemisphere.
     Data shouldn't contain any vertex value for medial wall.
+
+    Parameters
+    ----------
+    data: np.ndarray, shape=(59412, )
+        The data to be saved for CIFTI.
+
+    Returns
+    -------
+    : nib.Cifti2Image
+        A Cifti image object.
     """
     data = np.array(data)
 
@@ -161,3 +171,22 @@ def gen_cii(data) -> nib.Cifti2Image:
     cii = nib.Cifti2Image(np.array([data]),  # just in (1, n) dimension ...
                           header)
     return cii
+
+def save_cii(data: np.ndarray, fname=None) -> None:
+    """
+
+    Parameters
+    ----------
+    data: np.ndarray, shape=(59412, )
+        The data to be saved for CIFTI.
+    fname: os.path like
+        file name of the CIFTI file.
+
+    """
+    cii = gen_cii(data)
+
+    fname = Path(fname)
+
+    if not fname.parent.exists():
+        raise ValueError(f"Directory {fname.parent.absolute()} already exists!")
+    cii.to_filename(fname)
