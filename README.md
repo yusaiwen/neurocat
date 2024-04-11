@@ -4,6 +4,18 @@
 
 Neurocat is an fmri surface processing and visualization software by ailurophil.
 
+# Installation
+
+```shell
+git clone https://github.com/yusaiwen/neurocat.git
+```
+
+Change directory to `dist` directory and install with pip:
+
+```shell
+pip install neurocat-0.1.0-py3-none-any.whl
+```
+
 
 
 # visulization
