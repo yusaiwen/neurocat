@@ -247,7 +247,7 @@ def atlas_2_wholebrain_nm(data):
     atlas_d = get_cii_gii_data(atlas_f)  # data
 
     if len(atlas_d) == FSLR['vertex_len']['gii2']:
-        atlas_d = f64k_59k(atlas_d)
+        atlas_d = f64k_2_59k(atlas_d)
 
     return map_to_labels(data, atlas_d, mask=(atlas_d!=0), fill=np.nan)
 
@@ -408,7 +408,7 @@ def f59k_2_64k(nm: np.array, hm: bool = False) -> Union[np.ndarray, tuple]:
         return np.concatenate(out)
 
 
-def f64k_59k(mw, hm: bool = False) -> Union[np.ndarray, tuple]:
+def f64k_2_59k(mw, hm: bool = False) -> Union[np.ndarray, tuple]:
     if len(mw) != FSLR['vertex_len']['gii2']:
         raise  ValueError(f'Wrong data length({len(mw)})!')
 
