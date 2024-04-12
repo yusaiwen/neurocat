@@ -41,7 +41,7 @@ def _get_mesh(tp="s1200", mesh="veryinflated") -> list:
         raise ValueError("Invalid template type or mesh type!")
 
     if tp == "s1200":
-        return FSLR['S1200_tp'][f's1200_{mesh}']
+        return con_path_list(__base__, FSLR['S1200_tp'][f's1200_{mesh}'])
 
     if tp == "fslr":
         return tpget('fsLR',
