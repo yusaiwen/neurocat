@@ -1,6 +1,6 @@
 # neurocat
 
-[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm-project.org)
+[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm-project.org) ![License](https://img.shields.io/badge/license-MIT-yellow) ![Language](https://img.shields.io/badge/language-python-brightgreen) 
 
 Neurocat is an fmri surface processing and visualization software by ailurophil.
 
