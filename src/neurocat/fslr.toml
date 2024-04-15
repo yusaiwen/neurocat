@@ -2,13 +2,19 @@
 
 title = "FSLR"
 
-[vertex_len]
+[vertex_len]  # 32k
 L      = 29696 # LH and RH no medial wall
 R      = 29716
 LR     = 59412 # LH + RH altogether no medial wall
 MW     = 5572  # medial wall for both left and right hemisphere
 hemimw = 32492 # one hemisphere with its medial wall
 gii2   = 64984 # LH + RH + MW
+
+[fslr_gii_vertex]
+4k = 4002
+8k = 7842
+32k = 32492
+164k = 163842
 
 
 [hemi_name]

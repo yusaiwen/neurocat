@@ -1,7 +1,14 @@
+import os
+from pathlib import Path
+
 import nibabel as nib
 import numpy as np
-from .util import (_get_bm,
-                   FSLR)
+from .util import (__base__,
+                   FSLR,
+                   change_stupid_cii,
+                   gen_gii)
+
+
 nib.imageglobals.logger.setLevel(40)
 
 
@@ -12,7 +19,7 @@ def save_gii_hm(data, hm, fname) -> None:
 
     Parameters
     ----------
-    data: np.array
+    data: np.ndarray, shape=(32492, )
         Data to save in gii.
     hm: {'L', 'R'}
         "L" for left hemisphere, "R" for right hemisphere.
@@ -22,57 +29,40 @@ def save_gii_hm(data, hm, fname) -> None:
     ----------
     Nothing
     """
-    # check hemisphere
-    if hm not in ("L", "R"):
-        raise ValueError("Wrong input for hemisphere.")
+    if not Path(fname).parent().exist():
+        raise FileNotFoundError(f"Path(fname)parent().resolve() does not exist!")
 
-    # check data length
-    if len(data) != FSLR['vertex_len']['hemimw']:
-        raise ValueError(f"Wrong data length({len(data)})!")
-
-    structure_dic = dict(L="CortexLeft",
-                         R="CortexRight")
-    structure = structure_dic.get(hm)
-
-    gii = nib.gifti.gifti.GiftiImage()
-    data = nib.gifti.gifti.GiftiDataArray(np.array(data, dtype=np.float32))
-
-    # assign the structure(L,R hemisphere) for GIFTI
-    gii.add_gifti_data_array(data)
-    gii.meta = nib.gifti.gifti.GiftiMetaData(dict(AnatomicalStructurePrimary=structure))
-
+    gii = gen_gii_hm(data, hm)
     gii.to_filename(f"{fname}_hemi-{hm}.shape.gii")
 
 
 # def save gii_label() -> None:
 
 
-def save_gii(data, path) -> None:
-    """ 
+
+
+
+def save_gii(data, fname) -> None:
+    """
     Save as a gii shape file
-    
-    
+
+
     Parameters
     ----------
-    data: np.array
-        Data to save in gii.
+    data: np.array, shape=(64984,)
+        Data to save in gii. Length should be 64984(fslr+medial wall).
 
-
+    fname: str or os.Pathlike
+        Path to be saved for two hemispheres.
     Returns
     ----------
     Nothing
     """
+    giis = gen_gii(data)
+    giis[0].to_filename(f"{fname}_hemi-L.shape.gii")
+    giis[1].to_filename(f"{fname}_hemi-R.shape.gii")
 
-    # check data length
-    if len(data) != fslr_info.fs32k_vertex.get('gii2'):
-        raise ValueError(f"Wrong data length({len(data)})!")
-    hemimw =  FSLR['vertex_len']['hemimw']
-    lh = data[: hemimw]
-    rh = data[hemimw:]
 
-    save_gii_hm(lh, 'L', path)
-    save_gii_hm(rh, 'R', path)
-    
 #def save gii_label() -> None:
     ### don't want write QAQ
 
@@ -110,6 +100,68 @@ def save_gii(data, path) -> None:
 #     data[1][index[1]] = data_59k[29696:59412]
 #
 #     return np.concatenate(data, axis=0)
+
+def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
+    """
+    Read brain model from S1200's sulcus file. We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
+    * vertices: indicates the index of each vertex in the geometry.
+
+    Parameters
+    ----------
+    hm: {'L', 'R'}
+        Hemisphere specification.
+
+    Returns
+    -------
+    bm_out: nib.cifti2.BrainModelAxis
+        Cifti's brain model object.
+    """
+
+    # if hm not in ('L', 'R'):
+    #     raise ValueError("Not legal value for hemisphere specification!")
+
+    bm_ref = nib.load(__base__ / FSLR['S1200_tp']['s1200_sulc']).header.get_axis(1)
+    vertex = bm_ref.vertex
+    nvertices = bm_ref.nvertices
+
+    hmmw = FSLR['vertex_len']['hemimw']  # 32492
+    lh = FSLR['vertex_len']['L']  # 29696
+
+    if hm == 'L':
+        vertex = vertex[:lh]
+        structure_name = FSLR['hemi_name']['L']
+        nvertices = hmmw
+
+    elif hm == 'R':
+        vertex = vertex[lh:]  # don't change lh to rh, I am right [by ysw]
+        structure_name = FSLR['hemi_name']['R']
+        nvertices = hmmw
+
+    bm_out = nib.cifti2.BrainModelAxis.from_surface(vertices=vertex,
+                                                    nvertex=nvertices,
+                                                    name=structure_name)
+    return bm_out
+
+
+def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
+    """
+    Get Cifti's brain model.
+
+    Parameters
+    ----------
+    hm: {'L', 'R', 'LR'}
+        Hemisphere specification.
+
+    Returns
+    -------
+        : CIFTI's brain models.
+    """
+    # if hm not in ['lh', 'rh', 'lhrh']: # since this method could be accessed outside. Hence, check the legality
+    #     raise ValueError("Not legal value for hemisphere specification!")
+    if hm in ['L', 'R']:
+        return _get_bm_from_s1200(hm)
+    else:  # , 'LR'
+        return _get_bm_from_s1200('L') + _get_bm_from_s1200('R')
 
 
 def _gen_cii_head(hm) -> tuple:
@@ -190,3 +242,103 @@ def save_cii(data: np.ndarray, fname=None) -> None:
     if not fname.parent.exists():
         raise ValueError(f"Directory {fname.parent.absolute()} already exists!")
     cii.to_filename(fname)
+
+
+# def _gen_cii_tm_head(data, step: float, start: float=0, unit='SECOND') -> tuple:
+#     """
+#     Generate series CIFTI's head.
+#
+#     Parameters
+#     ----------
+#     start
+#     step
+#     size
+#     unit
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     size = data.shape[0]
+#     series_axis = nib.cifti2.cifti2_axes.SeriesAxis(start, step, size, unit)
+#     bm = _get_bm('LR')
+#     return (series_axis, bm)
+
+
+def _gen_cii_tm(data, step: float, start: float=0, unit='SECOND'):
+    """
+    Generate the CIFTI's time series object.
+
+    Parameters
+    ----------
+    data: np.ndarray, shape=(times, 59412)
+        Time series to be saved for CIFTI.
+    step: float
+        sampling time (TR)
+    start: float, optional
+        starting time point. Defaults to 0.
+    unit: str
+        Unit of the step size (one of ‘second’, ‘hertz’, ‘meter’, or ‘radian’)
+
+    Returns
+    : nib.Cifti2Image
+        CIFTI time series object.
+    -------
+
+    """
+    size = data.shape[0]
+    series_axis = nib.cifti2.cifti2_axes.SeriesAxis(start, step, size, unit)
+    bm = _get_bm('LR')
+    header = (series_axis, bm)
+    cii = nib.Cifti2Image(data, header)
+    return cii
+
+def save_cii_tm(data, fname, step: float, start: float=0, unit='SECOND'):
+    """
+    Save a CIFTI file time series data.
+
+    Parameters
+    ----------
+    data
+    fname: str
+        Path to save the CIFTI file. Should not include "dtseries.nii" in the end.
+    start: float, optional
+
+    step
+    unit
+
+    Returns
+    -------
+
+    """
+
+    fname = Path(fname)
+    if not fname.parent.exists():
+        raise FileNotFoundError(f"Directory {fname.parent.absolute()} does not exist!")
+
+    size = data.shape[0]
+    cii = _gen_cii_tm(data, start, step, unit)
+    cii.to_filename(f"{fname}.dtseries.nii")
+
+
+def change_stupid_cii_save(cii, fname):
+    """
+    Convert some stupid CIFTI file whose data length is different well-knwon length.
+    Fortunately, no medial wall length is fixed.
+
+    Parameters
+    ----------
+    cii
+    fname
+
+    Returns
+    -------
+
+    """
+    fname = Path(fname)
+    if not fname.parent.exists():
+        raise  FileNotFoundError(f"Directory {fname.parent.absolute()} does not exist!")
+
+    cii_ojb = change_stupid_cii(cii)
+    cii_ojb.to_filename(f"{fname}.dtseries.nii")
