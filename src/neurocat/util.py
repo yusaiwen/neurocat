@@ -1,12 +1,13 @@
 import nibabel as nib
 import numpy as np
-from brainspace.utils.parcellation import map_to_labels
+import pandas as pd
 from pathlib import (Path, PosixPath)
 from typing import Union
-from deprecation import deprecated
+from deprecated.sphinx import deprecated
 import toml
 import importlib.resources as pkg_resources
 import os
+import tempfile
 
 
 # read two config file
@@ -17,6 +18,38 @@ with open(__base__ / 'atlas.toml', 'r') as f:
     ATLAS = toml.load(f).get('atlas')
 
 nib.imageglobals.logger.setLevel(40)  # fuck nibabel stupid output
+
+def logger():
+    import logging
+    from rich.logging import RichHandler
+
+    logging.basicConfig(
+        level=eval("logging.DEBUG"),
+        format="%(message)s",
+        datefmt="[%m/%d/%Y %X]",
+        handlers=[RichHandler(rich_tracebacks=True)]
+    )
+    log = logging.getLogger("rich")
+    return log
+
+def tmpname(suffix, prefix=None, directory=None):
+    """
+    Little helper function because :man_shrugging:.
+
+    Parameters
+    ----------
+    suffix : str
+        Suffix of created filename
+
+    Returns
+    -------
+    fn : str
+        Temporary filename; user is responsible for deletion
+    """
+    fd, fn = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=directory)
+    os.close(fd)
+
+    return Path(fn)
 
 
 # Atlas
@@ -34,7 +67,21 @@ def _atlas_npar(atlas: str, par: int) -> Path:
         raise ValueError(f"Parcellation number of {par} is not supported for {atlas}.")
 
 
-def get_atlas(atlas: str = None, par: int = None) -> Path:
+def get_atlas(atlas: str, par: int = None) -> Path:
+    """
+    Get a atlas's path by the name and parcel number.
+
+    Parameters
+    ----------
+    atlas: str
+        The name of the atlas.
+    par: int
+        Parcellation number of the atlas.
+
+    Returns
+    -------
+
+    """
     if atlas not in ATLAS['ATLAS']:
         raise ValueError('Not supported atlas or you incorrectly type.')
 
@@ -43,36 +90,6 @@ def get_atlas(atlas: str = None, par: int = None) -> Path:
         return file.absolute()
     else:  # directory
         return _atlas_npar(atlas, par)
-
-
-
-
-
-
-
-
-# def get_cii_gii_data(cg: Union[nib.cifti2.cifti2.Cifti2Image,
-#                                nib.gifti.gifti.GiftiImage]) -> np.ndarray:
-#     """
-#     Return the data of GIFTI or CIFTI file. Since nibabel use two different method to get the data of them.
-#
-#     Parameters
-#     ----------
-#     cg: nib.cifti2.cifti2.Cifti2Image or nib.gifti.gifti.GiftiImage
-#         A Cifti2Image or GiftiImage object.
-#
-#     Returns
-#     -------
-#     data: np.ndarray
-#         Cifti or GIFTI's data.
-#     """
-#
-#     if type(cg) is nib.cifti2.cifti2.Cifti2Image:
-#         return cg.get_fdata().flatten()
-#     elif type(cg) is nib.gifti.gifti.GiftiImage:
-#         return cg.agg_data().flatten()
-#     else:
-#         raise ValueError(f"Input not GIFTI or CIFTI object!")
 
 
 def get_cii_gii_data(cg) -> np.ndarray:
@@ -101,6 +118,69 @@ def get_cii_gii_data(cg) -> np.ndarray:
         return cg.agg_data().flatten()
     else:
         raise ValueError(f"Input not GIFTI or CIFTI object!")
+
+
+def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
+    """
+    Read brain model from S1200's sulcus file. We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
+    * vertices: indicates the index of each vertex in the geometry.
+
+    Parameters
+    ----------
+    hm: {'L', 'R'}
+        Hemisphere specification.
+
+    Returns
+    -------
+    bm_out: nib.cifti2.BrainModelAxis
+        Cifti's brain model object.
+    """
+
+    # if hm not in ('L', 'R'):
+    #     raise ValueError("Not legal value for hemisphere specification!")
+
+    bm_ref = nib.load(__base__ / FSLR['S1200_tp']['s1200_sulc']).header.get_axis(1)
+    vertex = bm_ref.vertex
+    nvertices = bm_ref.nvertices
+
+    hmmw = FSLR['vertex_len']['hemimw']  # 32492
+    lh = FSLR['vertex_len']['L']  # 29696
+
+    if hm == 'L':
+        vertex = vertex[:lh]
+        structure_name = FSLR['hemi_name']['L']
+        nvertices = hmmw
+
+    elif hm == 'R':
+        vertex = vertex[lh:]  # don't change lh to rh, I am right [by ysw]
+        structure_name = FSLR['hemi_name']['R']
+        nvertices = hmmw
+
+    bm_out = nib.cifti2.BrainModelAxis.from_surface(vertices=vertex,
+                                                    nvertex=nvertices,
+                                                    name=structure_name)
+    return bm_out
+
+
+def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
+    """
+    Get Cifti's brain model.
+
+    Parameters
+    ----------
+    hm: {'L', 'R', 'LR'}
+        Hemisphere specification.
+
+    Returns
+    -------
+        : CIFTI's brain models.
+    """
+    # if hm not in ['lh', 'rh', 'lhrh']: # since this method could be accessed outside. Hence, check the legality
+    #     raise ValueError("Not legal value for hemisphere specification!")
+    if hm in ['L', 'R']:
+        return _get_bm_from_s1200(hm)
+    else:  # , 'LR'
+        return _get_bm_from_s1200('L') + _get_bm_from_s1200('R')
 
 
 def _atlas2array(atlas):
@@ -138,7 +218,7 @@ def _atlas2array(atlas):
     return atlas
 
 
-def _len2atlas(data_len: int) -> str:
+def len2atlas(data_len: int) -> str:
     """
     Judge which atlas the data is based from the length of the data.
 
@@ -169,89 +249,85 @@ def _len2atlas(data_len: int) -> str:
         return atlas_dic[data_len]
 
 
-def atlas_2_wholebrain_nm(data):
+def _data_to_giiform(data: np.ndarray) -> np.ndarray:
     """
-    Convert atlas's short data to whole brain data without medial wall's vertex.
-    Parameters
-    ----------
-    data: ndarray, shape=(n_atlas,)
-        Scalar data for each atlas's ROI
-
-    Returns
-    ----------
-    : ndarray, shape=(wholebrain_no-MW,)
-        Array data of whole brain without medial wall's vertex.
-    -------
-
-    """
-
-    data_len = len(data)
-    atlas_n = _len2atlas(data_len)  # name
-    atlas_f = get_atlas(atlas_n, data_len)  # file
-    atlas_d = get_cii_gii_data(atlas_f)  # data
-
-    if len(atlas_d) == FSLR['vertex_len']['gii2']:
-        atlas_d = f64k_2_59k(atlas_d)
-
-    return map_to_labels(data, atlas_d, mask=(atlas_d!=0), fill=np.nan)
-
-
-def atlas_2_wholebrain(data):
-    """
-    Convert atlas's short data to whole brain data with medial wall's vertex.
-    Parameters
-    ----------
-    data: list-like
-        Scalar data for each atlas's ROI
-
-    Returns
-    ----------
-    : ndarray, shape=(wholebrain_has-MW,)
-        Array data of whole brain with medial wall's vertex.
-    -------
-
-    """
-
-    data_59k = atlas_2_wholebrain_nm(data)
-    return f59k_2_64k(data_59k)
-
-
-# to modify but not now
-def cii_2_64k(cii, hm=False):
-    """
+    Convert the data to GIFTI form(time series type are vertex*time).
 
     Parameters
     ----------
-    cii: str or os.PathLike
-        Path to the file to be transformed
-    hm: bool, default False
-        Whether to separate each hemisphere data.
-        If true, the first index of the output is left hemisphere,
-        and the second index of the output is right hemisphere.
+    data
 
     Returns
     -------
 
     """
-    c = nib.load(cii)
-    len_c = max(c.shape)
-    data = c.get_fdata().flatten()
+    shape = data.shape
 
-    if len_c == 64984:
-        if hm is True:
-            return [data[0:32492], data[32492:64984]]
+    if len(shape) == 1:  # as it is, 1D
+        return data
+    elif len(shape) == 2 and shape[0] == 1:  # CIFTI's dsclaler mode
+        return data.flatten()
+    elif len(shape) == 2 and shape[0] > shape[1]:  # GIFTI form: vertex*time
+        return data
+    elif len(shape) == 2 and shape[0] < shape[1]:  # CIFTI form: time * vertex
+        return data.T
 
-        return c.get_fdata().flatten()
 
-    elif len_c == 59412:
-        out = f59k_2_64k(data, hm=True)
+def _data_to_npform(data: np.ndarray) -> np.ndarray:
+    """
+    Convert the data to NUMPY form(
+    * time series type are time*vertex
+    * scaler/shape data are 1D array(cifti are in shape=(,vertex_number) for convinence of uniform API of cii[,n])
 
-        if hm:
-            return out
-        else:
-            return np.concatenate(out)
-    else:
-        raise ValueError(f"Wrong length({len_c}) of input file.")
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+
+    """
+
+    shape = data.shape
+
+    # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')  # change path when upload to the package
+    # vertex_list = density_info['vertex_n'].to_numpy()
+
+    if len(shape) == 1:  # as it is, 1D
+        return data
+    elif len(shape) == 2 and shape[0] == 1:  # CIFTI's dsclaler mode
+        return data.flatten()
+    elif len(shape) == 2 and shape[0] > shape[1]:  # GIFTI form: vertex*time
+        return data.T
+    elif len(shape) == 2 and shape[0] < shape[1]:  # time * vertex
+        return data
+
+
+def _data_to_ciiform(data: np.ndarray) -> np.ndarray:
+    """
+    Convert the data to NUMPY form(
+    * time series type are time*vertex
+    * scaler/shape data are 1D array(cifti are in shape=(,vertex_number) for convinence of uniform API of cii[,n])
+
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+
+    """
+
+    shape = data.shape
+
+    if len(shape) == 1:  # 1D
+        return np.array([data])
+    elif len(shape) == 2 and shape[0] == 1:  # CIFTI's dsclaler mode
+        return data
+    elif len(shape) == 2 and shape[0] > shape[1]:  # GIFTI form: vertex * time
+        return data.T
+    elif len(shape) == 2 and shape[0] < shape[1]:  # time * vertex
+        return data
 
 
 @deprecated
@@ -297,7 +373,7 @@ def unmask_medial(lh, rh, den="32k", atlas="fsLR", threshold=float('-inf')):
     return dict(left=np.multiply(lh, 1 - nomedialwall_L),
                 right=np.multiply(rh, 1 - nomedialwall_R))
 
-
+@deprecated(version='0.1.0', reason="please use FSLR")
 def _get_fslr_vertex() -> tuple:
     """
     Get fsLR cifti's 59k vertecies' indecies.
@@ -314,72 +390,6 @@ def _get_fslr_vertex() -> tuple:
     vertex = bm_ref.vertex
 
     return vertex[:lh], vertex[lh:]
-
-
-def f59k_2_64k(nm: np.array, hm: bool = False) -> Union[np.ndarray, tuple]:
-    """
-    Add medial wall(all zero) to a no medial wall array.
-
-    Parameters
-    ----------
-    nm: ndarray, shape = (n, 59412)
-        no medial wall array
-    hm: bool, default False
-        Whether to separate each hemisphere data.
-        If true, the first index of the output is left hemisphere,
-        and the second index of the output is right hemisphere.
-
-    Returns
-    -------
-
-    """
-    lh = FSLR['vertex_len']['L']  # 29696
-    lhrh = FSLR['vertex_len']['LR']  # 59412
-    hemimw = FSLR['vertex_len']['hemimw']  # 32492
-
-    if len(nm.shape) == 1:
-        len_nm = len(nm)
-    elif len(nm.shape) == 2:
-        len_nm = nm.shape[1]
-    if len_nm != lhrh:
-        raise ValueError(f'Wrong data length({len_nm})!')
-    index_lh, index_rh = _get_fslr_vertex()
-
-    if len(nm.shape) == 1:
-        out = (np.zeros(hemimw), np.zeros(hemimw))
-        out[0][index_lh] = nm[:lh]
-        out[1][index_rh] = nm[lh:]
-    elif len(nm.shape) == 2:
-        out = (np.zeros((nm.shape[0], hemimw)), np.zeros((nm.shape[0], hemimw)))
-        out[0][:, index_lh] = nm[:, :lh]
-        out[1][:, index_rh] = nm[:, lh:]
-    if hm:
-        return out
-    else:
-        if len(nm.shape) == 1:
-            return np.concatenate(out)
-        elif len(nm.shape) == 2:
-            return np.concatenate(out, axis=1)
-
-
-def f64k_2_59k(mw, hm: bool = False) -> Union[np.ndarray, tuple]:
-    if len(mw) != FSLR['vertex_len']['gii2']:
-        raise  ValueError(f'Wrong data length({len(mw)})!')
-
-    lh = FSLR['vertex_len']['L']  # 29696
-    rh = FSLR['vertex_len']['R']  # 29716
-    hemimw = FSLR['vertex_len']['hemimw']  # 32492
-    index_lh, index_rh = _get_fslr_vertex()
-
-    out = (np.zeros(lh), np.zeros(rh))
-    out[0][:] = mw[:hemimw][index_lh]
-    out[1][:] = mw[hemimw:][index_rh]
-
-    if hm:
-        return out
-    else:
-        return np.concatenate(out)
-
 
 
 def con_path_list(path: PosixPath, ls: list) -> list:
@@ -404,76 +414,6 @@ def con_path_list(path: PosixPath, ls: list) -> list:
         con.append(path / file)
     return con
 
-def _get_cii_nomedialmask(c):
-    brain_model = c.header.get_axis(1)
-    return brain_model.surface_mask
-
-
-def _get_cii_nomedial_index(c):
-    """
-
-    Returns
-    --------------
-    index: list of index of nomedial wall index. First element is for left hemisphere, second element is for right hemisphere.
-    """
-    brain_model = c.header.get_axis(1)
-    mask_lh = brain_model.name == "CIFTI_STRUCTURE_CORTEX_LEFT"
-    mask_rh = brain_model.name == "CIFTI_STRUCTURE_CORTEX_RIGHT"
-
-    index_lh = brain_model.vertex[mask_lh]  # 29696
-    index_rh = brain_model.vertex[mask_rh]  # 29716
-
-    return [index_lh, index_rh]
-
-def cii_2_nmw(c) -> np.ndarray:
-    """
-    Given a CIFTI file, whose data length may not be standard as defined in FSLR(neigher in 29696, 29716, 59412, 32492, 64984).
-    Differences are the medial wall area, but consistency comes in the no medial wall.
-    Use this information to transfer the data into no medial wall.
-
-    Parameters
-    ----------
-    c: os.path like or nib.cifti2.cifti2.Cifti2Image
-        A CIFTI file whose data length may be strange(as MSC).
-
-    Returns
-    -------
-
-    """
-    if c is not nib.cifti2.cifti2.Cifti2Image:
-        c = Path(c)
-        if not c.exists():
-            raise FileNotFoundError(f"{c.absolute()} not found!")
-
-        c = nib.load(c)
-    data_long = c.get_fdata() # (n, 64k) 64k may be larger for some stupid reason like MSC data
-    index = _get_cii_nomedialmask(c)
-
-    data = data_long[:, index]
-
-    return data
-
-
-def change_stupid_cii(cii):
-
-    cii_obj = nib.load(cii)
-    data_len = cii_obj.get_fdata().shape[1]
-
-    if data_len in FSLR['vertex_len'].values():
-        raise ValueError("This is a fucking normal cifti file, not stupid!!!.")
-
-    series = cii_obj.header.get_axis(0) # the as the original file is ok
-
-    bm = _get_bm('LR') # change to normal
-    header = (series, bm)
-
-    data = cii_2_nmw(cii)
-
-    # generate cifti2 object
-    cii = nib.Cifti2Image(data,  # just in (1, n) dimension ...
-                          header)
-    return cii
-
 
 def gen_gii_hm(data, hm) -> nib.GiftiImage:
     """
@@ -495,12 +435,12 @@ def gen_gii_hm(data, hm) -> nib.GiftiImage:
         raise ValueError("Wrong input for hemisphere.")
 
     # check data length
-    if len(data.shape) == 1:
-        data_len = data.shape[0]
-    elif len(data.shape) == 2:
-        data_len = data.shape[0]
+    _, _, data_len, _ = judge_density(data)
+    data = _data_to_giiform(data)
 
-    if data_len != FSLR['vertex_len']['hemimw']:
+    fsl_info = pd.read_csv(__base__ / "S1200/fslr_vertex/density_info.csv")
+    gii2_vertexn = fsl_info.query('structure == "hmmw"')['vertex_n'].to_numpy()
+    if _data_to_ciiform(data).shape[1] not in gii2_vertexn:
         raise ValueError(f"Wrong data length({len(data)})!")
 
     structure_dic = dict(L="CortexLeft",
@@ -518,47 +458,10 @@ def gen_gii_hm(data, hm) -> nib.GiftiImage:
     # gii.to_filename(f"{fname}_hemi-{hm}.shape.gii")
 
 
-def _data_to_giiform(data: np.ndarray):
-    shape = data.shape
-
-    gii_values = np.array(list(FSLR['fslr_gii_vertex'].values()))
-    gii_values2 = np.concatenate((gii_values, gii_values*2))
-
-    if len(shape) == 1:  # as it is, 1D
-        return data
-    elif len(shape) == 2 and shape[0] == 1 and shape[1] in gii_values2:  # CIFTI's dsclaler mode
-        return data.flatten()
-    elif len(shape) == 2 and shape[0] in gii_values2:  # GIFTI form: vertex*time
-        return data
-    elif len(shape) == 2 and shape[1] in gii_values2:  # time * vertex
-        return data.T
 
 
-def _judge_data_type(data: np.ndarray) -> tuple:
-    """
-    Determine the data type is time series or scaler data.
-    GIFTI's timeseries is in transcope form(vertex*time) for CIFTI(time*vertex).
 
-    Parameters
-    ----------
-    data: np.ndarray
-        Data to check.
 
-    Returns
-    : str {'series', 'scaler'}
-        Data type.
-    -------
-
-    """
-    if len(data.shape) == 2 and data.shape[0] == 1:
-        dtype = 'scaler'
-        data = data.flatten()
-    elif len(data.shape) == 1:
-        dtype = 'scaler'
-    else:
-        dtype = 'series'
-
-    return dtype, data
 
 
 def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
@@ -586,7 +489,7 @@ def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
     gii.meta = nib.gifti.gifti.GiftiMetaData(dict(AnatomicalStructurePrimary=structure))
     return gii
 
-def gen_gii(data, hm: str = 'LR') -> tuple:
+def gen_gii(data) -> tuple:
     """
     Save as a gii shape file
 
@@ -607,84 +510,234 @@ def gen_gii(data, hm: str = 'LR') -> tuple:
         data = np.concatenate(data)
 
     # check data length
-    gii_values = np.array(list(FSLR['fslr_gii_vertex'].values())) * 2  # double for both hemisphere
+    density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
+    density, structure, data_len, data = judge_density(data)
+    gii_values = density_info.query('structure in ("L", "R", "LR", "hmmw", "gii2")')['vertex_n'].to_numpy()
 
-    if len(data.shape) == 2:
-        if data.shape[0] not in gii_values:
-            data = data.T # data in shape=(*k, n) n stands for time point
-    data_len = data.shape[0]
-    if data_len not in gii_values:
-        raise ValueError(f"Wrong data length({len(data)})!")
+    data = _data_to_giiform(data)
+
+    if structure not in ('L', 'R', 'LR', 'hmmw', 'gii2'):
+        raise ValueError("Not a legal structure.")
+
+    if structure in ('L', 'R', 'LR'):
+        data = reverse_mw(data)
+
+    if structure in ('L', 'R', 'hmmw'):
+        if structure == 'hmmw' and hm is None:
+            raise ValueError('hmmw requires the assignment of hemisphere!')
+        else:
+            hm = structure
+        return gen_gii_hm(data, hm)
+    else:
+        hemimw =  density_info.query('density == @density and structure == "hmmw"')['vertex_n'].values[0]
+        if len(data.shape) == 1:
+            lh = data[:hemimw]
+            rh = data[hemimw:]
+        elif len(data.shape) == 2:
+            lh = data[:hemimw, :]
+            rh = data[:hemimw, :]
+
+        return gen_gii_hm(lh, 'L'), gen_gii_hm(rh, 'R')
 
 
-    hemimw = FSLR['vertex_len']['hemimw']
-    if len(data.shape) == 1:
-        lh = data[:hemimw]
-        rh = data[hemimw:]
-    elif len(data.shape) == 2:
-        lh = data[:hemimw, :]
-        rh = data[hemimw:, :]
-
-    return gen_gii_hm(lh, 'L'), gen_gii_hm(rh, 'R')
-
-def cii2gii(cii):
+def _judge_data_type(data: np.ndarray) -> tuple:
     """
-    Convert an CIFTI file to GIFTI object.
+    Determine the data type is time series or scaler data.
+    GIFTI's timeseries is in transcope form(vertex*time) for CIFTI(time*vertex).
 
     Parameters
     ----------
-    cii: str or os.PathLike
-        Path to CIFTI file.
+    data: np.ndarray
+        Data to check.
 
     Returns
+    : str {'series', 'scaler'}
+        Data type.
     -------
 
     """
-    # check input type and existence
-    if not isinstance(cii, (str, os.PathLike)):
-        raise TypeError("Input not a str or PathLike!")
-    if not Path(cii).exists():
-        raise FileNotFoundError(f"{Path(cii).resolve()} not found!")
+    if len(data.shape) >= 3:
+        raise ValueError("Input data should be at most 2 dimensions!")
 
-    # fetch 59k data
-    data = cii_2_nmw(cii)
-
-    # convert to 64k data
-    data_64k = f59k_2_64k(data)
-    # convert to gii object
-    print(data_64k.shape)
-    return gen_gii(data_64k)
-
-
-def NestedDictValues(d):
-  for v in d.values():
-    if isinstance(v, dict):
-      yield from NestedDictValues(v)
+    if len(data.shape) == 2 and data.shape[0] == 1:
+        dtype = 'scaler'
+        data = data.flatten()
+    elif len(data.shape) == 1:
+        dtype = 'scaler'
     else:
-      yield v
+        dtype = 'series'
+
+    return dtype, _data_to_npform(data)
 
 
-def _judge_density(data: np.ndarray) -> str:
+def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
+    """
+    Determine the surface density and structure from the data('s length actually).
+    Remember some structure may have the same vertex number.
+    fslr-4k and fslr-8k are symmetric and thus has the same vertex number for both hemispheres.
+
+    Parameters
+    ----------
+    data
+
+    Returns
+    -------
+    density:
+    structure:
+    data_len:
+    data:
+
+    """
+    density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv') # change path when upload to the package
+    vertex_list = density_info['vertex_n'].to_numpy()
 
     dtype, data = _judge_data_type(data)
     if dtype == 'series':
-        data_len = dtype.shape[1]
+        data_len = data.shape[1]
     if dtype == 'scaler':
-        data_len = dtype.shape[0]
+        data_len = data.shape[0]
 
-    den_list = tuple(NestedDictValues(FSLR['density_info']))
-
-    if data_len not in den_list:
+    if data_len not in vertex_list:
         raise ValueError(f"This is not any hemisphere!")
 
+    q_result = density_info.query('vertex_n == @data_len')
+    density = q_result['density'].values[0]
+    structure = q_result['structure'].values[0]
+
+    return density, structure, data_len, data
 
 
-# def fuck_mw(data):
+def fuck_mw(data: np.ndarray, hm=None) -> np.ndarray:
+    """
+    Mask the medial wall of a surface's data which contains the data for medial wall.
 
-    # determine denisty
+    Parameters
+    ----------
+    data: np.ndarray
+        The data to be masked. If you feed a data with no need to be masked, I will warn you.
+    hm: {'L', 'R'}, optional
+        If data are from half hemisphere, the hemisphere should be spefication
+        for two hemisphere are symmetric in vertex number. Default None.
+
+    Returns
+    -------
+    : np.ndarray
+        Masked data with no medial wall.
+    """
+    density, structure, data_len, data = judge_density(data)
+    data = _data_to_ciiform(data)
+    density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
+    need_fuck_structure = ('hmmw', 'gii2')
+    need_fuck_vertexn = density_info.query('structure in @need_fuck_structure')['vertex_n'].to_numpy()
+
+    if data_len not in need_fuck_vertexn:
+        if structure in ('MW', 'MWL', 'MWR'):
+            raise ValueError('Medial wall slim to nothing?')
+        return data
+
+    mnw_index = np.load(__base__ / f'S1200/fslr_vertex/fslr-{density}_mw.npy')
+
+    if structure == 'hmmw':  # only fuck half of the hemisphere
+        if hm is None and density in ('32k', '164k'):
+            raise ValueError(
+                "Missing hemisphere spefication for the hemisphere with medial wall is symmetric across hemispheres!")
+        elif hm is None and density in ('4k', '8k'):  # hm is not None or density in ('4k', '8k')
+            hm = 'L'  # 4k 8k assymetry
+        lh_n = density_info.query('density==@density and structure=="L"')['vertex_n'].values[0]
+        rh_n = density_info.query('density==@density and structure=="R"')['vertex_n'].values[0]
+
+        if hm == 'L':
+            data_nmw = np.zeros((data.shape[0], lh_n))
+            mnw_index = mnw_index[:lh_n]
+        elif hm == 'R':
+            data_nmw = np.zeros((data.shape[0], rh_n))
+            hmmw = density_info.query('density==@density and structure=="hmmw"')['vertex_n'].values[0]
+            mnw_index = mnw_index[lh_n:] - hmmw
+        data_nmw[:,:] = data.T[mnw_index].T
+    else:  # gii2
+        LR = density_info.query('density==@density and structure=="LR"')['vertex_n'].values[0]
+        data_nmw = np.zeros((data.shape[0], LR))
+        data_nmw[:, :] = data.T[mnw_index].T
+
+    return data_nmw
 
 
+def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
+    """
+    Reverse the medial wall of a surface's data which contains the data for medial wall.
 
+    Parameters
+    ----------
+    data: np.ndarray
+        The data to be masked. If you feed a data with no need to be masked, I will warn you.
+    hm: {'L', 'R'}, optional
+        If data are from half hemisphere, the hemisphere should be spefication
+        for two hemisphere are symmetric in vertex number. Default None.
 
-# if not isinstance(cii, (str, os.PathLike, nib.GiftiImage)):
-#     raise TypeError("Input not a str or PathLike or GIFTI object!")
+    Returns
+    -------
+    : np.ndarray
+        Masked data with no medial wall.
+    """
+    # density, structure, data_len, data = judge_density(data)
+    # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
+    # need_reverse_structure = ('L', 'R', 'LR')
+    # need_reverse_vertexn = density_info.query('structure in @need_reverse_structure')['vertex_n'].to_numpy()
+    #
+    # if data_len not in need_reverse_vertexn:
+    #     if structure in ('MW', 'MWL', 'MWR'):
+    #         raise ValueError('Medial wall reverse to what?')
+    #     return data
+    # mnw_index = np.load(__base__ / f'S1200/fslr_vertex/fslr-{density}_mw.npy')
+    #
+    # if structure in ('L', 'R'):  # only reverse half of the hemisphere
+    #     # if density in ('4k', '8k') and hm is None:  # 4k 8k ok syymetric
+    #     #     raise ValueError("Missing hemisphere spefication for the hemisphere with medial wall is symmetric across hemispheres!")
+    #     lh_n = density_info.query('density==@density and structure=="L"')['vertex_n'].values[0]
+    #     hmmw = density_info.query('density==@density and structure=="hmmw"')['vertex_n'].values[0]
+    #
+    #     data_mw = np.zeros((data.shape[0], hmmw)) # may generate (1, vertex)
+    #     data_mw.fill(np.nan)
+    #
+    #     if structure == 'L':  # 4k 8k ok syymetric
+    #         data_mw[:, mnw_index[:lh_n]] = data
+    #     else:
+    #         data_mw[:, mnw_index[lh_n:] - hmmw] = data
+    # else:  # LR
+    #     gii2 = density_info.query('density==@density and structure=="gii2"')['vertex_n'].values[0]
+    #     data_mw = np.zeros((data.shape[0], gii2))
+    #     data_mw.fill(np.nan)
+    #     data_mw[:, mnw_index] = data
+    #
+    # return _data_to_npform(data_mw)
+    density, structure, data_len, data = judge_density(data)
+    data = _data_to_ciiform(data)
+    density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
+    need_reverse_structure = ('L', 'R', 'LR')
+    need_reverse_vertexn = density_info.query('structure in @need_reverse_structure')['vertex_n'].to_numpy()
+
+    if data_len not in need_reverse_vertexn:
+        if structure in ('MW', 'MWL', 'MWR'):
+            raise ValueError('Medial wall reverse to what?')
+        return data
+    mnw_index = np.load(__base__ / f'S1200/fslr_vertex/fslr-{density}_mw.npy')
+
+    if structure in ('L', 'R'):  # only reverse half of the hemisphere
+        # if density in ('4k', '8k') and hm is None:  # 4k 8k ok syymetric
+        #     raise ValueError("Missing hemisphere spefication for the hemisphere with medial wall is symmetric across hemispheres!")
+        lh_n = density_info.query('density==@density and structure=="L"')['vertex_n'].values[0]
+        hmmw = density_info.query('density==@density and structure=="hmmw"')['vertex_n'].values[0]
+        data_mw = np.zeros((data.shape[0], hmmw)) # may generate (1, vertex)
+        data_mw.fill(np.nan)
+
+        if structure == 'L':  # 4k 8k ok syymetric
+            data_mw[:, mnw_index[:lh_n]] = data
+        else:
+            data_mw[:, mnw_index[lh_n:] - hmmw] = data
+    else:  # LR
+        gii2 = density_info.query('density==@density and structure=="gii2"')['vertex_n'].values[0]
+        data_mw = np.zeros((data.shape[0], gii2))  # (n, 59412)
+        data_mw.fill(np.nan)
+        data_mw[:, mnw_index] = data
+
+    return _data_to_npform(data_mw)

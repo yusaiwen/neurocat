@@ -16,6 +16,8 @@ dependencies = [
     "toml==0.10.2",
     "templateflow>=24.2.0",
     "pandas>=2.2.2",
+    "deprecated>=1.2.14",
+    "neuromaps>=0.0.5",
 ]
 requires-python = ">=3.12"
 readme = "README.md"

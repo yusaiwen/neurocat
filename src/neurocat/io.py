@@ -5,9 +5,11 @@ import nibabel as nib
 import numpy as np
 from .util import (__base__,
                    FSLR,
-                   change_stupid_cii,
-                   gen_gii)
-
+                   gen_gii,
+                   _get_bm, gen_gii_hm,
+                   judge_density,
+                   _get_bm_from_s1200)
+from .transfer import change_stupid_cii
 
 nib.imageglobals.logger.setLevel(40)
 
@@ -29,7 +31,7 @@ def save_gii_hm(data, hm, fname) -> None:
     ----------
     Nothing
     """
-    if not Path(fname).parent().exist():
+    if not Path(fname).parent.exists():
         raise FileNotFoundError(f"Path(fname)parent().resolve() does not exist!")
 
     gii = gen_gii_hm(data, hm)
@@ -101,74 +103,14 @@ def save_gii(data, fname) -> None:
 #
 #     return np.concatenate(data, axis=0)
 
-def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
-    """
-    Read brain model from S1200's sulcus file. We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
-    * vertices: indicates the index of each vertex in the geometry.
 
-    Parameters
-    ----------
-    hm: {'L', 'R'}
-        Hemisphere specification.
-
-    Returns
-    -------
-    bm_out: nib.cifti2.BrainModelAxis
-        Cifti's brain model object.
-    """
-
-    # if hm not in ('L', 'R'):
-    #     raise ValueError("Not legal value for hemisphere specification!")
-
-    bm_ref = nib.load(__base__ / FSLR['S1200_tp']['s1200_sulc']).header.get_axis(1)
-    vertex = bm_ref.vertex
-    nvertices = bm_ref.nvertices
-
-    hmmw = FSLR['vertex_len']['hemimw']  # 32492
-    lh = FSLR['vertex_len']['L']  # 29696
-
-    if hm == 'L':
-        vertex = vertex[:lh]
-        structure_name = FSLR['hemi_name']['L']
-        nvertices = hmmw
-
-    elif hm == 'R':
-        vertex = vertex[lh:]  # don't change lh to rh, I am right [by ysw]
-        structure_name = FSLR['hemi_name']['R']
-        nvertices = hmmw
-
-    bm_out = nib.cifti2.BrainModelAxis.from_surface(vertices=vertex,
-                                                    nvertex=nvertices,
-                                                    name=structure_name)
-    return bm_out
-
-
-def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
-    """
-    Get Cifti's brain model.
-
-    Parameters
-    ----------
-    hm: {'L', 'R', 'LR'}
-        Hemisphere specification.
-
-    Returns
-    -------
-        : CIFTI's brain models.
-    """
-    # if hm not in ['lh', 'rh', 'lhrh']: # since this method could be accessed outside. Hence, check the legality
-    #     raise ValueError("Not legal value for hemisphere specification!")
-    if hm in ['L', 'R']:
-        return _get_bm_from_s1200(hm)
-    else:  # , 'LR'
-        return _get_bm_from_s1200('L') + _get_bm_from_s1200('R')
 
 
 def _gen_cii_head(hm) -> tuple:
     """
     Generate cifti head according to the hemisphere.
     """
-    # if hm not in ('lh', 'rh', 'lhrh'): # since this method could be accessed outside. Hence, check the legality
+    # if hm not in ('L', 'R', 'LR'): # since this method could be accessed outside. Hence, check the legality
     #     raise ValueError("Not legal value for hemisphere specification!")
 
     # scalar axis
@@ -185,6 +127,7 @@ def _len2hemi(data) -> str:
     """
     Judge the hemisphere from the length of the data.
     """
+
     data_len = len(data)
     fs32k_vertex = FSLR['vertex_len']
 
@@ -216,7 +159,7 @@ def gen_cii(data) -> nib.Cifti2Image:
         raise ValueError("Wrong dimension for input data to be saved as cifti.")
 
     # judge which hemisphere and generate the header
-    hm = _len2hemi(data)
+    hm = judge_density(data)[1]
     header = _gen_cii_head(hm)
 
     # generate cifti2 object

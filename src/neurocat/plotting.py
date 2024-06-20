@@ -3,14 +3,12 @@ import os
 from surfplot import Plot  # for plot surface
 from templateflow.api import get as tpget
 from .color import *
-from .util import *
 from .util import (FSLR,
-                   cii_2_64k,
                    con_path_list,
                    __base__)
-
-
-nib.imageglobals.logger.level = 40
+from .transfer import (reverse_mw)
+import nibabel as nib
+nib.imageglobals.logger.setLevel(40)
 
 # def fetch_tp(atlas="fsLR", den='32k', mesh='veryinflated', hcp=None, p=Path()):
 #     if hcp is not None:
@@ -20,13 +18,13 @@ nib.imageglobals.logger.level = 40
 #     return fetch_atlas(atlas, den).get(mesh)
 
 
-def _get_mesh(tp="s1200", mesh="veryinflated") -> list:
+def _get_mesh(tp="fslr", mesh="veryinflated") -> list:
     """
     Get surface geometrical mesh.
 
     Parameters
     ----------
-    tp: {"s1200", "fslr"}, default "s1200"
+    tp: {"s1200", "fslr"}, default "fslr"
         Type of surface geometrical mesh.
     mesh: {"veryinflated", "inflated"}, default "veryinflated"
         Type of mesh.
@@ -48,13 +46,18 @@ def _get_mesh(tp="s1200", mesh="veryinflated") -> list:
                      density='32k',
                      suffix=mesh)
 
+def _get_sulcus():
+    sulcus = __base__ / FSLR['S1200_tp']['s1200_sulc']  # fsLR 59412
+    sulcus = nib.load(sulcus).get_fdata().flatten()
+    return reverse_mw(sulcus)
 
-def draw_and_save(layer1,
+def draw_and_save(layer1=None,
                   colorbar='RdBu_r', color_range=None,
-                  fig_name='brain', layout='grid', trim=True,
+                  fig_name='brain', layout='grid', pn=False, trim=True,
                   cbar_label=None,
                   tp='s1200', mesh='veryinflated',
-                  sulc=False, outline=False):
+                  sulc=False, outline=False,
+                  just_mesh=False) -> Plot:
     """
     Plot brain surfaces with data layers
 
@@ -80,20 +83,24 @@ def draw_and_save(layer1,
     trim: bool, optional
         If True, trim the output figure by ImageMagick's `convert` command.
         Defaults True.
+    pn: bool, optional
+        If True, Delete the zero. Defaults False.
     cbar_label: str, optional
-            Label to include with colorbar if shown. Note that this is not
-            required for the colorbar to be drawn. Default: None
+        Label to include with colorbar if shown. Note that this is not
+        required for the colorbar to be drawn. Default: None
     tp: {"s1200", "fslr"}, optional.
-        Template type. Default "s1200"
+        Template type. Default "fslr"
     mesh: {"inflated", "veryinflated"}, optional
         Mesh type. Default "veryinflated"
     sulcL bool, optional
         Whether to plot suculs inforamtion. Default: False.
     outline: bool, optional
-            Plot only an outline of contiguous vertices with the same value.
-            Useful if plotting regions of interests, atlases, or discretized
-            data. Not recommended for continous data. Default: False
-
+        Plot only an outline of contiguous vertices with the same value.
+        Useful if plotting regions of interests, atlases, or discretized
+        data. Not recommended for continous data. Default: False
+    just_mesh: book, optional
+        Return just the mesh. For those who want to add layer mannually.
+        Default: False
     Returns
     -------
 
@@ -114,14 +121,32 @@ def draw_and_save(layer1,
     brain = Plot(tp[0], tp[1], layout=layout, size=size, zoom=zoom)
 
     if sulc:
-        sulcus = __base__ / FSLR['S1200_tp']['s1200_sulc'] # fsLR 59412
-        brain.add_layer(cii_2_64k(sulcus), cmap='binary_r', cbar=False)
+        sulcus = _get_sulcus()
+        brain.add_layer(sulcus, cmap='binary_r', cbar=False)
 
-    brain.add_layer(layer1,
-                    cmap=colorbar,
-                    color_range=color_range,
-                    zero_transparent=True,
-                    cbar_label=cbar_label)
+    if just_mesh:
+        return brain
+
+    if pn:
+        cr_lower, cr_upper = color_range
+        cr_middle = (cr_lower + cr_upper) / 2
+
+        brain.add_layer(layer1*(layer1 < cr_middle),
+                        cmap=colorbar,
+                        color_range=color_range,
+                        zero_transparent=True,
+                        cbar_label=cbar_label)
+        brain.add_layer(layer1 * (layer1 > cr_middle),
+                        cmap=colorbar,
+                        color_range=color_range,
+                        zero_transparent=True,
+                        cbar_label=cbar_label)
+    else:
+        brain.add_layer(layer1,
+                        cmap=colorbar,
+                        color_range=color_range,
+                        zero_transparent=True,
+                        cbar_label=cbar_label)
     if outline:
         color_list = ["#8C8C8C", "#8C8C8C"]
         n_fine = 1000
