@@ -143,7 +143,7 @@ def gen_cii(data) -> nib.Cifti2Image:
 
     Parameters
     ----------
-    data: np.ndarray, shape=(59412, )
+    data: np.ndarray, shape=(n, 59412)
         The data to be saved for CIFTI.
 
     Returns
@@ -154,9 +154,9 @@ def gen_cii(data) -> nib.Cifti2Image:
     data = np.array(data)
 
     # determine if the data is one dimension
-    ndim = len(data.shape)
-    if ndim != 1:
-        raise ValueError("Wrong dimension for input data to be saved as cifti.")
+    # ndim = len(data.shape)
+    # if ndim != 1:
+    #     raise ValueError("Wrong dimension for input data to be saved as cifti.")
 
     # judge which hemisphere and generate the header
     hm = judge_density(data)[1]

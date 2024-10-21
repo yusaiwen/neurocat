@@ -24,6 +24,10 @@ pblue: "#0044ff"
 pltblue1: "#0069ff"
 pltblue2: "#0099ff"
 pbluecyan: "#00ccff"
+
+cool: "#3B4CC0"
+warm: "#B40426"
+
 yeo17:
   - "#781286"
   - "#ff0000"
@@ -42,3 +46,4 @@ yeo17:
   - "#000082"
   - "#ffff00"
   - "#cd3e4e"
+

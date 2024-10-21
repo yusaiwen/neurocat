@@ -18,7 +18,7 @@ from .util import (FSLR,
                    len2atlas,
                    get_atlas)
 import time
-
+import pyvista as pv
 
 @deprecated(version='0.1.0', reason="Update to reverse_mw()")
 def f59k_2_64k(nm: np.array, hm: bool = False) -> Union[np.ndarray, tuple]:
@@ -430,7 +430,7 @@ def change_stupid_cii(cii) -> nib.Cifti2Image:
     return cii
 
 
-def f2f(data: np.ndarray, tar_den: str, hm=None) -> np.ndarray:  #  no test
+def f2f(data: np.ndarray, tar_den: str, hm=None, method='linear') -> np.ndarray:  #  no test
     if tar_den not in ('4k', '8k', '32k', '164k'):
         raise ValueError(f"Input target denisty({tar_den}) is not legal!")
 
@@ -462,7 +462,7 @@ def f2f(data: np.ndarray, tar_den: str, hm=None) -> np.ndarray:  #  no test
         giikrh_tpf = tmpname(".gii")
         giis[1].to_filename(giikrh_tpf)
         time_end = time.time()  ##
-        resampled = fslr_to_fslr((giiklh_tpf, giikrh_tpf), tar_den)
+        resampled = fslr_to_fslr((giiklh_tpf, giikrh_tpf), tar_den, method=method)
         os.remove(giiklh_tpf)
         os.remove(giikrh_tpf)
 
@@ -474,9 +474,49 @@ def f2f(data: np.ndarray, tar_den: str, hm=None) -> np.ndarray:  #  no test
         giis = gen_gii_hm(data, hm)
         gii_tpf = tmpname(".gii")
         giis.to_filename(gii_tpf)
-        resampled = fslr_to_fslr(gii_tpf, tar_den, hm)
+        resampled = fslr_to_fslr(gii_tpf, tar_den, hm, method)
         os.remove(gii_tpf)
 
         resampled = _data_to_npform(resampled[0].agg_data())
 
     return resampled
+
+
+def _tian_a2w_hm(value: np.ndarray, hm=None) -> np.ndarray:
+    if hm not in ('L', 'R'):
+        raise ValueError('Hemishpere specification should be either L or R!')
+
+    if hm == 'L':
+        mesh = pv.read(__base__ / 'atlas' / 'tian2020' / 'tian_lh.vtk')
+        values = value[:16]
+    elif hm == 'R':
+        mesh = pv.read(__base__ / 'atlas' / 'tian2020' / 'tian_rh.vtk')
+        values = value[16:]
+
+    # convert from atlas to whole subcortex length
+    cells = mesh.active_scalars
+    unique_elements, counts_elements = np.unique(cells, return_counts=True)
+    return np.repeat(values, counts_elements, axis=0)
+
+
+
+def tian_a2w(value: np.ndarray, hm='LR') -> np.ndarray:
+    value = value.flatten().astype(np.float64)
+
+    # check the input
+    if len(value) != 32:
+        raise ValueError('Input scalar length should be in the length of 32!')
+
+    if hm not in ('L', 'R', 'LR'):
+        raise ValueError('Input hemisphere needs to one of L, R, or LR!')
+
+    # load subcortex model
+    if hm in ('L', 'R'):
+        scalars = _tian_a2w_hm(value, hm)
+    else: # LR
+        scalars_lh = _tian_a2w_hm(value, 'L')
+        scalars_rh = _tian_a2w_hm(value, 'R')
+        scalars = np.concatenate((scalars_lh, scalars_rh))
+    return scalars
+
+

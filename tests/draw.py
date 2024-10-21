@@ -2,8 +2,8 @@
 
 import numpy as np
 import scipy.io as sio
-from neurocat.util import atlas_2_wholebrain as a2w
-from neurocat.plotting import ds
+from neurocat.transfer import atlas_2_wholebrain as a2w
+from neurocat.plotting import draw_and_save as ds
 
 
 indvar_mat = sio.loadmat("indvar_6gp.mat")["indvar"]
