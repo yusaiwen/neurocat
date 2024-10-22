@@ -319,6 +319,9 @@ def draw_ccsc_save(layer1=None,
                    system=False,
                    sulc=False, outline=False,
                    just_mesh=False):
+
+    if len(layer1) != 432:
+        raise ValueError('Input data should be in the length of 432, while your data is of length {len(layer1)}!')
     # take apart between subcortex and cerebral cortex
     layer1 = layer1.astype(np.float64)
     cc = layer1[:400]
