@@ -311,7 +311,7 @@ def combine_cc_sc(cc, scl, scr, fig_name):
     cc.save(fig_name)
 
 
-def draw_ccsc_save(layer1=None,
+def draw_sftian_save(layer1=None,
                    colorbar='RdBu_r', color_range=None,
                    fig_name='brain.png', layout='grid', pn=False, trim=True,
                    cbar_label=None,
