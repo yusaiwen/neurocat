@@ -18,6 +18,7 @@ dependencies = [
     "pandas>=2.2.2",
     "deprecated>=1.2.14",
     "neuromaps>=0.0.5",
+    "pyvista>=0.44.1",
 ]
 requires-python = ">=3.12"
 readme = "README.md"

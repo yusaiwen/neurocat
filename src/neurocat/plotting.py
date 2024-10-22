@@ -58,7 +58,7 @@ def _get_sulcus():
     return reverse_mw(sulcus)
 
 def draw_and_save_hm(layer1=None,
-                  colorbar='RdBu_r', color_range=None, hm="lh",
+                  colorbar='coolwarm', color_range=None, hm="lh",
                   fig_name='brain', layout='row', pn=False, trim=True,
                   cbar_label=None,
                   tp='s1200', mesh='veryinflated',
@@ -127,7 +127,7 @@ def draw_and_save_hm(layer1=None,
     return brain
 
 def draw_and_save(layer1=None,
-                  colorbar='RdBu_r', color_range=None,
+                  colorbar='coolwarm', color_range=None,
                   fig_name='brain', layout='grid', pn=False, trim=True,
                   cbar_label=None,
                   tp='fslr', mesh='veryinflated',

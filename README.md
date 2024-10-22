@@ -16,7 +16,7 @@ Change directory to `dist` directory and install with pip:
 pip install neurocat-0.1.0-py3-none-any.whl
 ```
 
-
+For some image operation, neurocat uses ImageMagick. You should install it on https://imagemagick.org/script/download.php. Remember to add the binary path of ImageMagick to PATH environment.
 
 # visulization
 
