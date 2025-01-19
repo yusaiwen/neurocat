@@ -3,11 +3,14 @@ import os
 from surfplot import Plot  # for plot surface
 from templateflow.api import get as tpget
 import pyvista as pv
+from reportlab.pdfgen import canvas
 from PIL import Image
 from .color import *
 from .util import (FSLR,
                    con_path_list,
-                   __base__)
+                   __base__,
+                   tmp_name,
+                   display_pdf)
 from .transfer import (
     reverse_mw,
     atlas_2_wholebrain as a2w,
@@ -64,6 +67,8 @@ def draw_and_save_hm(layer1=None,
                   tp='s1200', mesh='veryinflated',
                   sulc=False, outline=False,
                   just_mesh=False) -> Plot:
+
+
     zoom = 1.7
     tp = _get_mesh(tp, mesh)
 
@@ -110,7 +115,7 @@ def draw_and_save_hm(layer1=None,
                         cbar_label=cbar_label)
 
     if outline:
-        color_list = ["#8C8C8C", "#8C8C8C"]
+        color_list = ["#00000000", "#00000000"]
         n_fine = 1000
         just_black = get_cm(color_list, n_fine, 'black')
         brain.add_layer(layer1,
@@ -126,9 +131,79 @@ def draw_and_save_hm(layer1=None,
 
     return brain
 
+
+def brain_right(brain, low, up, legend, output, display=True):
+    low = str(low)
+    up = str(up)
+    brain_size = { # 1200, 850
+        'width': 200,
+        'height': 850/6
+    }
+    colormap_size = {
+        'width': 100,
+        'height': 10
+    }
+    canvas_size = {
+        'width': brain_size['width'] + 40,
+        'height': brain_size['height']
+    }
+
+    # create a canvas
+    c = canvas.Canvas(output, pagesize=(canvas_size['width'],
+                                        canvas_size['height']))
+
+    # add brain map
+    c.drawImage(brain, 0, 0,
+                width=brain_size['width'],
+                height=brain_size['height'],
+                preserveAspectRatio=True,
+                mask='auto')
+
+    # add colormap
+    colormap_x = brain_size['width']
+    colormap_y = brain_size['height'] / 2 + colormap_size['width'] / 2
+    c.saveState()
+
+    # translate to colormap
+    c.translate(brain_size['width'], brain_size['height'])
+    c.rotate(-90)
+    margin_colorbar_brain = 10
+
+    c.drawImage(f"{__base__}/atlas/coolwarm_rev.png",
+                brain_size['height'] / 2 - colormap_size['width'] / 2, margin_colorbar_brain,
+                width=100,
+                height=10,
+                # preserveAspectRatio = True,
+                mask='auto')
+
+    # add description of the colormap
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(brain_size['height'] / 2, 25, legend)
+
+    c.restoreState()
+    # add lower limit of the colormap
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(brain_size['width'] + margin_colorbar_brain + colormap_size['height'] / 2,
+                        (brain_size['height'] - colormap_size['width']) / 2 - 8,
+                        low
+                        )
+
+    # add upper limit of the colormap
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(brain_size['width'] + margin_colorbar_brain + colormap_size['height'] / 2,
+                        (brain_size['height'] + colormap_size['width']) / 2 + 2,
+                        up
+                        )
+
+    c.save()
+    if display:
+        display_pdf(output)
+
+
 def draw_and_save(layer1=None,
                   colorbar='coolwarm', color_range=None,
-                  fig_name='brain', layout='grid', pn=False, trim=True,
+                  fig_name='brain', layout='grid', legend=None,
+                  pn=False, trim=True,
                   cbar_label=None,
                   tp='fslr', mesh='veryinflated',
                   system=False,
@@ -205,6 +280,9 @@ def draw_and_save(layer1=None,
     if just_mesh:
         return brain
 
+    if len(layer1) in (100, 200, 300, 400, 1000, 360, 7):
+        layer1 = a2w(layer1)
+
     if pn:
         cr_lower, cr_upper = color_range
         cr_middle = (cr_lower + cr_upper) / 2
@@ -226,7 +304,7 @@ def draw_and_save(layer1=None,
                         zero_transparent=True,
                         cbar_label=cbar_label)
     if outline:
-        color_list = ["#909090", "#909090"]
+        color_list = ["#8C8C8C", "#8C8C8C"]
         n_fine = 1000
         just_black = get_cm(color_list, n_fine, 'black')
         brain.add_layer(layer1,
@@ -247,15 +325,20 @@ def draw_and_save(layer1=None,
                         as_outline=True,
                         cbar=False
                         )
-    # fig = brain.build()
-    # fig.show()
 
     fig = brain.render()
-    fig.screenshot(fig_name + ".png", transparent_bg=True)  # no colorbar
+    tmp_png = tmp_name('.png')
+    fig.screenshot(tmp_png, transparent_bg=True)  # no colorbar
 
     if trim is True:
-        os.system(f"convert {fig_name}.png -trim {fig_name}.png")
+        os.system(f"convert {tmp_png} -trim {tmp_png}")
 
+    brain_right(tmp_png,
+                color_range[0], color_range[1],
+                legend,
+                f'{fig_name}.pdf')
+    os.remove(tmp_png)
+    
     return brain
 
 
@@ -312,7 +395,7 @@ def combine_cc_sc(cc, scl, scr, fig_name):
 
 
 def draw_sftian_save(layer1=None,
-                   colorbar='RdBu_r', color_range=None,
+                   colorbar='coolwarm', color_range=None,
                    fig_name='brain.png', layout='grid', pn=False, trim=True,
                    cbar_label=None,
                    tp='fslr', mesh='veryinflated',
@@ -320,12 +403,12 @@ def draw_sftian_save(layer1=None,
                    sulc=False, outline=False,
                    just_mesh=False):
 
-    if len(layer1) != 432:
-        raise ValueError('Input data should be in the length of 432, while your data is of length {len(layer1)}!')
+    if len(layer1) not in (1032, 432):
+        raise ValueError('Input data should be in the length of 432 or 1032, while your data is of length {len(layer1)}!')
     # take apart between subcortex and cerebral cortex
     layer1 = layer1.astype(np.float64)
-    cc = layer1[:400]
-    tian = layer1[400:]
+    cc = layer1[:len(layer1)-32]
+    tian = layer1[len(layer1)-32:]
 
     cc = a2w(cc)
     draw_and_save(layer1=cc,
