@@ -1,0 +1,31 @@
+# configuration for FSLR CIFTI/GIFTI file structure
+
+title = "FSLR"
+
+[vertex_len]  # 32k
+L      = 29696 # LH and RH no medial wall
+R      = 29716
+LR     = 59412 # LH + RH altogether no medial wall
+MW     = 5572  # medial wall for both left and right hemisphere
+hemimw = 32492 # one hemisphere with its medial wall
+gii2   = 64984 # LH + RH + MW
+
+[fslr_gii_vertex]
+4k = 4002
+8k = 7842
+32k = 32492
+164k = 163842
+
+
+[hemi_name]
+L = "CIFTI_STRUCTURE_CORTEX_LEFT"
+R = "CIFTI_STRUCTURE_CORTEX_RIGHT"
+
+[S1200_tp]
+s1200_inflated = ["S1200/S1200.L.inflated_MSMAll.32k_fs_LR.surf.gii",
+                  "S1200/S1200.R.inflated_MSMAll.32k_fs_LR.surf.gii"]
+s1200_veryinflated = ["S1200/S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii",
+                      "S1200/S1200.R.very_inflated_MSMAll.32k_fs_LR.surf.gii"]
+s1200_sulc = "S1200/S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii"
+s1200_medialwall = "S1200/Human.MedialWall_Conte69.32k_fs_LR.dlabel.nii"
+

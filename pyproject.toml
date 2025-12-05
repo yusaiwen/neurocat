@@ -1,0 +1,82 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "neurocat"
+dynamic = ["version"] # Dynamically get version from code or file
+description = 'Neurocat is an fmri surface processing and visualization software by ailurophil.'
+readme = "README.md"
+requires-python = ">=3.10" # the test is only on 3.10
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Saiwen Yu", email = "yusaiwen@mail.bnu.edu.cn" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "numpy==1.26.4",
+  "scipy==1.11.4", 
+  "matplotlib==3.7.5", 
+  "pandas==2.2.2",
+  "deprecated",
+  "toml",
+  "PyYAML",
+
+  "brainspace>=0.1.1",
+  "surfplot==0.2.0",
+  "templateflow>=24.2.0",
+  "neuromaps>=0.0.5",
+
+  "vtk-egl; sys_platform == 'linux'",
+  "vtk; sys_platform != 'linux'",
+  "pyvista>=0.44.1",
+  "wand"
+]
+
+[project.urls]
+Documentation = "https://github.com/U.N. Owen/neurocat#readme"
+Issues = "https://github.com/U.N. Owen/neurocat/issues"
+Source = "https://github.com/U.N. Owen/neurocat"
+
+# 版本管理：从文件（如 src/mypackage/__init__.py）或 git tag 读取
+[tool.hatch.version]
+path = "src/neurocat/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+env-vars = { PIP_EXTRA_INDEX_URL = "https://wheels.vtk.org" }
+
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/neurocat tests}"
+
+[tool.coverage.run]
+source_pkgs = ["neurocat", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/neurocat/__about__.py",
+]
+
+[tool.coverage.paths]
+neurocat = ["src/neurocat", "*/neurocat/src/neurocat"]
+tests = ["tests", "*/neurocat/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
