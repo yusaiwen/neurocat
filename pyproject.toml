@@ -1,12 +1,15 @@
 [build-system]
-requires = ["hatchling"]
+requires = [
+  "hatchling",
+  "hatch-vcs"
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "neurocat"
 dynamic = ["version"] # Dynamically get version from code or file
 description = 'Neurocat is an fmri surface processing and visualization software by ailurophil.'
-readme = "README.md"
+readme = "README.rst"
 requires-python = "==3.10.*" # supports >=3.10 <3.11
 license = "MIT"
 keywords = []
@@ -73,6 +76,10 @@ source = "vcs"
 [tool.coverage.paths]
 neurocat = ["src/neurocat", "*/neurocat/src/neurocat"]
 tests = ["tests", "*/neurocat/tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]  
+include = ["neurocat*"]
 
 [tool.coverage.report]
 exclude_lines = [
