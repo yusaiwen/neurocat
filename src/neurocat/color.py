@@ -1,3 +1,9 @@
+"""
+Color utilities module for NeuroCat.
+
+This module provides functions and classes for color manipulation, including loading predefined colors from a YAML file, creating color gradients, generating custom colormaps, and saving colormaps as images. It also includes a class for predefined colormaps inspired by classic color schemes.
+"""
+
 from matplotlib.colors import ListedColormap as clc
 import pylab as plt
 import yaml
@@ -10,14 +16,14 @@ from .util import __base__
 with open(__base__ / "color.yml", 'r') as f:
     colors = yaml.load(f, Loader=yaml.FullLoader)
 
-globals().update(colors)
+COLORS = colors  # Store colors in a dictionary instead of polluting globals
 
 
 def get_transparent_cm(n_colors, cm_name):
     """
     Creates a fully transparent colormap.
 
-    Parameters:
+    Args:
         n_colors (int): Number of colors in the colormap.
         cm_name (str): Name of the colormap.
 
@@ -31,19 +37,43 @@ def get_transparent_cm(n_colors, cm_name):
 
 # color concerned
 def hex_to_RGB(hex_str):
-    """ #FFFFFF -> [255,255,255]"""
+    """
+    Converts a hex color string to RGB list.
+
+    Args:
+        hex_str (str): Hex color string, e.g., '#FFFFFF'.
+
+    Returns:
+        list: RGB values as [R, G, B].
+    """
     #Pass 16 to the integer function for change of base
     return [int(hex_str[i:i + 2], 16) for i in range(1, 6, 2)]
 
 
 def rgb_to_hex(rgb):
+    """
+    Converts RGB values to hex color string.
+
+    Args:
+        rgb (list): RGB values as [R, G, B].
+
+    Returns:
+        str: Hex color string, e.g., '#FFFFFF'.
+    """
     return '#%02x%02x%02x' % (rgb[0], rgb[1], rgb[2])
 
 
 def get_color_gradient(c1, c2, n):
     """
-    Given two hex colors, returns a color gradient
-    with n colors.
+    Given two hex colors, returns a color gradient with n colors.
+
+    Args:
+        c1 (str): First hex color.
+        c2 (str): Second hex color.
+        n (int): Number of colors in the gradient.
+
+    Returns:
+        list: List of RGB colors in the gradient.
     """
     assert n > 1
     c1_rgb = np.array(hex_to_RGB(c1)) / 255
@@ -54,6 +84,17 @@ def get_color_gradient(c1, c2, n):
 
 
 def get_cm(color_list, n_fine, cm_name):
+    """
+    Creates a custom colormap from a list of colors.
+
+    Args:
+        color_list (list): List of hex colors.
+        n_fine (int): Number of fine steps between colors.
+        cm_name (str): Name of the colormap.
+
+    Returns:
+        ListedColormap: The custom colormap.
+    """
     color_n = len(color_list)
 
     this_color = color_list.pop()
@@ -69,7 +110,13 @@ def get_cm(color_list, n_fine, cm_name):
 
 
 def save_cm(cm, name):
-    """save color map"""
+    """
+    Saves a colormap as an image file.
+
+    Args:
+        cm: The colormap to save.
+        name (str): Name of the output file.
+    """
     a = np.array([[0, 1]])
     plt.figure(figsize=(9, 1.5))
     img = plt.imshow(a, cmap=cm)
@@ -83,7 +130,12 @@ def save_cm(cm, name):
 class cmap:
     @staticmethod
     def gradient():
-        """return the functional principal's classic color bar"""
+        """
+        Returns the functional principal's classic color bar.
+
+        Returns:
+            ListedColormap: The gradient colormap.
+        """
         first = int((128 * 2) - np.round(255 * (1. - 0.90)))
         second = (256 - first)
 
@@ -96,18 +148,36 @@ class cmap:
 
     @staticmethod
     def myelin():
-        color_list = [red, orange, oran_yell, yellow, limegreen, green, blue_videen7, blue_videen9, blue_videen11,
-                      purple2]
+        """
+        Returns a myelin-inspired colormap.
+
+        Returns:
+            ListedColormap: The myelin colormap.
+        """
+        color_list = [COLORS['red'], COLORS['orange'], COLORS['oran_yell'], COLORS['yellow'], COLORS['limegreen'], COLORS['green'], COLORS['blue_videen7'], COLORS['blue_videen9'], COLORS['blue_videen11'],
+                      COLORS['purple2']]
         n_fine = 1000
 
         return get_cm(color_list, n_fine, 'myelin')
 
     @staticmethod
     def psych_no_none():
-        color_list = [yellow, pyell_oran, orange, poran_red, pblue, pltblue1, pltblue2, pbluecyan]
+        """
+        Returns a psychology-inspired colormap without neutral tones.
+
+        Returns:
+            ListedColormap: The psych_no_none colormap.
+        """
+        color_list = [COLORS['yellow'], COLORS['pyell_oran'], COLORS['orange'], COLORS['poran_red'], COLORS['pblue'], COLORS['pltblue1'], COLORS['pltblue2'], COLORS['pbluecyan']]
         n_fine = 1000
         return get_cm(color_list, n_fine, 'psych_no_none')
 
     @staticmethod
     def hot_no_black():
+        """
+        Returns a hot colormap without black.
+
+        Returns:
+            ListedColormap: The hot_no_black colormap.
+        """
         return clc(plt.cm.hot(np.linspace(0.15, 1., 5000)), name='hot_no_black')

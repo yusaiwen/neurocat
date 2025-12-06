@@ -1,3 +1,13 @@
+"""
+NeuroCAT utility module for neuroimaging data processing.
+
+This module provides utilities for handling CIFTI and GIFTI files, atlas management,
+brain model operations, data transformations, and surface density judgments.
+Key functions include atlas retrieval, data conversion, medial wall handling,
+and temporary file creation for neuroimaging workflows.
+
+"""
+
 import nibabel as nib
 import numpy as np
 import pandas as pd
@@ -36,28 +46,23 @@ def logger():
 
 # Create a temporary file in /dev/shm
 def tmp_name(suffix=None, prefix=None):
-    """
-   Create a temporary file. If the operating system is Linux, the file should be in /dev/shm, where the files are stored in memory.
-   Instead in Windows, the file
+    """Create a temporary file.
 
-    Parameters
-    ----------
+    If the operating system is Linux, the file should be in /dev/shm, where the files are stored in memory.
+    Instead in Windows, the file
 
-    suffix : str
-        Suffix of created filename
-    prefix: str
-    Returns
-    -------
-    fn : str
-        Temporary filename; user is responsible for deletion
+    Args:
+        suffix (str, optional): Suffix of created filename.
+        prefix (str, optional): Prefix of created filename.
+
+    Returns:
+        str: Temporary filename; user is responsible for deletion.
     """
     import platform
     if platform.system() == 'Linux':
         tmp_dir = '/dev/shm'
-    if platform.system() == 'Darwin':  #  macos
+    else: # windows and macos
         tmp_dir = None
-    else: # windows
-        tmp_dir = '.'
 
     # Create a temporary file in /dev/shm
     fd, fn = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=tmp_dir)
@@ -67,6 +72,11 @@ def tmp_name(suffix=None, prefix=None):
 
 
 def display_pdf(pdf):
+    """Display a PDF file as SVG in Jupyter.
+
+    Args:
+        pdf (str): Path to the PDF file.
+    """
     svg_tmp = tmp_name('.svg')
     os.system(f'pdf2svg {pdf} {svg_tmp}')
     display(SVG(filename=svg_tmp))
@@ -74,6 +84,11 @@ def display_pdf(pdf):
 
 
 def display_pdf2(pdf):
+    """Display a PDF file as PNG in Jupyter.
+
+    Args:
+        pdf (str): Path to the PDF file.
+    """
     png_tmp = tmp_name('.png')
     os.system(f'convert -density 300 {pdf} {png_tmp}')
     Image(filename=png_tmp)
@@ -82,6 +97,18 @@ def display_pdf2(pdf):
 
 # Atlas
 def _atlas_npar(atlas: str, par: int) -> Path:
+    """Get atlas path for specific parcellation.
+
+    Args:
+        atlas (str): Atlas name.
+        par (int): Parcellation number.
+
+    Returns:
+        Path: Path to the atlas file.
+
+    Raises:
+        ValueError: If parcellation number is not supported.
+    """
     if par == 998:  # schaefer 998 is 1000p in CIFTI version
         par = 1000
     atlas_dic = dict(
@@ -98,19 +125,17 @@ def _atlas_npar(atlas: str, par: int) -> Path:
 
 
 def get_atlas(atlas: str, par: int = None) -> Path:
-    """
-    Get a atlas's path by the name and parcel number.
+    """Get an atlas's path by name and parcel number.
 
-    Parameters
-    ----------
-    atlas: str
-        The name of the atlas.
-    par: int
-        Parcellation number of the atlas.
+    Args:
+        atlas (str): The name of the atlas.
+        par (int, optional): Parcellation number of the atlas.
 
-    Returns
-    -------
+    Returns:
+        Path: Absolute path to the atlas file.
 
+    Raises:
+        ValueError: If atlas is not supported.
     """
     if atlas not in ATLAS['ATLAS']:
         raise ValueError('Not supported atlas or you incorrectly type.')
@@ -123,18 +148,19 @@ def get_atlas(atlas: str, par: int = None) -> Path:
 
 
 def get_cii_gii_data(cg) -> np.ndarray:
-    """
-    Return the data of GIFTI or CIFTI file. Since nibabel use two different method to get the data of them.
+    """Return the data of GIFTI or CIFTI file.
 
-    Parameters
-    ----------
-    cg: nib.cifti2.cifti2.Cifti2Image or nib.gifti.gifti.GiftiImage
-        A Cifti2Image or GiftiImage object.
+    Since nibabel uses two different methods to get the data of them.
 
-    Returns
-    -------
-    data: np.ndarray
-        Cifti or GIFTI's data.
+    Args:
+        cg (str or Path): Path to Cifti2Image or GiftiImage file.
+
+    Returns:
+        np.ndarray: Cifti or GIFTI's data.
+
+    Raises:
+        FileNotFoundError: If file not found.
+        ValueError: If input not GIFTI or CIFTI object.
     """
     cg = Path(cg)
 
@@ -151,21 +177,17 @@ def get_cii_gii_data(cg) -> np.ndarray:
 
 
 def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
-    """
-    Read brain model from S1200's sulcus file. We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
+    """Read brain model from S1200's sulcus file.
+
+    We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
     * vertices: indicates the index of each vertex in the geometry.
 
-    Parameters
-    ----------
-    hm: {'L', 'R'}
-        Hemisphere specification.
+    Args:
+        hm ({'L', 'R'}, optional): Hemisphere specification.
 
-    Returns
-    -------
-    bm_out: nib.cifti2.BrainModelAxis
-        Cifti's brain model object.
+    Returns:
+        nib.cifti2.BrainModelAxis: Cifti's brain model object.
     """
-
     # if hm not in ('L', 'R'):
     #     raise ValueError("Not legal value for hemisphere specification!")
 
@@ -193,17 +215,13 @@ def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
 
 
 def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
-    """
-    Get Cifti's brain model.
+    """Get Cifti's brain model.
 
-    Parameters
-    ----------
-    hm: {'L', 'R', 'LR'}
-        Hemisphere specification.
+    Args:
+        hm ({'L', 'R', 'LR'}): Hemisphere specification.
 
-    Returns
-    -------
-        : CIFTI's brain models.
+    Returns:
+        nib.cifti2.cifti2_axes.BrainModelAxis: CIFTI's brain models.
     """
     # if hm not in ['lh', 'rh', 'lhrh']: # since this method could be accessed outside. Hence, check the legality
     #     raise ValueError("Not legal value for hemisphere specification!")
@@ -214,20 +232,20 @@ def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
 
 
 def _atlas2array(atlas):
-    """
-    If the atlas is gifti/cifti file seperated in two files, this function will concatenated them into one array.
+    """Convert atlas to array.
+
+    If the atlas is gifti/cifti file separated in two files, this function will concatenate them into one array.
     If the atlas is just one cifti file, return the value of it.
 
+    Args:
+        atlas: Atlas input.
 
-    Parameters
-    ----------
-    atlas
+    Returns:
+        np.ndarray: Atlas as array.
 
-    Returns
-    -------
-
+    Raises:
+        Exception: If atlas type is unknown or outnumbers.
     """
-
     if type(atlas) in [tuple, list, np.array]:
         atlas = np.array(atlas)
         if len(atlas) == 1:
@@ -249,17 +267,16 @@ def _atlas2array(atlas):
 
 
 def len2atlas(data_len: int) -> str:
-    """
-    Judge which atlas the data is based from the length of the data.
+    """Judge which atlas the data is based from the length of the data.
 
-    Parameters
-    ----------
-    data_len: int
-        The length of the data.
+    Args:
+        data_len (int): The length of the data.
 
-    Returns
-    -------
+    Returns:
+        str: Atlas name.
 
+    Raises:
+        ValueError: If data length not recognized.
     """
     atlas_df = pd.read_csv(__base__ / 'atlas/atlas.csv')
     # convert this dataframe to a dictionary
@@ -271,16 +288,13 @@ def len2atlas(data_len: int) -> str:
 
 
 def _data_to_giiform(data: np.ndarray) -> np.ndarray:
-    """
-    Convert the data to GIFTI form(time series type are vertex*time).
+    """Convert the data to GIFTI form (time series type are vertex*time).
 
-    Parameters
-    ----------
-    data
+    Args:
+        data (np.ndarray): Input data.
 
-    Returns
-    -------
-
+    Returns:
+        np.ndarray: Data in GIFTI form.
     """
     shape = data.shape
 
@@ -295,20 +309,17 @@ def _data_to_giiform(data: np.ndarray) -> np.ndarray:
 
 
 def _data_to_npform(data: np.ndarray) -> np.ndarray:
+    """Convert the data to NUMPY form.
+
+    Time series type are time*vertex.
+    Scalar/shape data are 1D array (cifti are in shape=(,vertex_number) for convenience of uniform API of cii[,n]).
+
+    Args:
+        data (np.ndarray): Input data.
+
+    Returns:
+        np.ndarray: Data in NUMPY form.
     """
-    Convert the data to NUMPY form(
-    * time series type are time*vertex
-    * scaler/shape data are 1D array(cifti are in shape=(,vertex_number) for convinence of uniform API of cii[,n])
-
-    Parameters
-    ----------
-    data
-
-    Returns
-    -------
-
-    """
-
     shape = data.shape
 
     # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')  # change path when upload to the package
@@ -325,20 +336,17 @@ def _data_to_npform(data: np.ndarray) -> np.ndarray:
 
 
 def _data_to_ciiform(data: np.ndarray) -> np.ndarray:
+    """Convert the data to CIFTI form.
+
+    Time series type are time*vertex.
+    Scalar/shape data are 1D array (cifti are in shape=(,vertex_number) for convenience of uniform API of cii[,n]).
+
+    Args:
+        data (np.ndarray): Input data.
+
+    Returns:
+        np.ndarray: Data in CIFTI form.
     """
-    Convert the data to NUMPY form(
-    * time series type are time*vertex
-    * scaler/shape data are 1D array(cifti are in shape=(,vertex_number) for convinence of uniform API of cii[,n])
-
-    Parameters
-    ----------
-    data
-
-    Returns
-    -------
-
-    """
-
     shape = data.shape
 
     if len(shape) == 1:  # 1D
@@ -353,8 +361,13 @@ def _data_to_ciiform(data: np.ndarray) -> np.ndarray:
 
 @deprecated
 def fetch_data(lh, rh, den='32k', p=Path()):
-    """
-    Give the function two hemisphere's path, concatinate them and unmask the medial wall to a left and right dictionary.
+    """Give the function two hemisphere's path, concatenate them and unmask the medial wall to a left and right dictionary.
+
+    Args:
+        lh: Left hemisphere path.
+        rh: Right hemisphere path.
+        den (str): Resolution.
+        p (Path): Path object.
     """
 
     l_data, r_data = nib.load(lh).agg_data(), nib.load(rh).agg_data()
@@ -363,28 +376,28 @@ def fetch_data(lh, rh, den='32k', p=Path()):
 
 
 def thresh_array(data, threshold):
-    """
-    Threshold an numpy array, with
-    * the value lower than the threshold being 0
-    * the value greater than or equal to threshold being what it is
+    """Threshold a numpy array.
 
-    Parameters
-    -----------
-    data: an numpy array(one demension) to be set a threhold
+    Values lower than the threshold become 0.
+    Values greater than or equal to threshold remain as is.
 
-    threshold: a value(threshold)
+    Args:
+        data (np.ndarray): Array to threshold (one dimension).
+        threshold: Threshold value.
     """
     return data * (data >= threshold)
 
 
-@deprecated  # 这个改改还能用
+@deprecated
 def unmask_medial(lh, rh, den="32k", atlas="fsLR", threshold=float('-inf')):
-    """
-    unmask medial area
+    """Unmask medial area.
 
-    lh: left hemisphere numpy array
-    rh: right hemispehre numpy array
-    den: resolution <32k|164k>
+    Args:
+        lh: Left hemisphere numpy array.
+        rh: Right hemisphere numpy array.
+        den (str): Resolution.
+        atlas (str): Atlas.
+        threshold: Threshold value.
     """
 
     lh, rh = thresh_array(lh, threshold), thresh_array(rh, threshold)
@@ -397,14 +410,10 @@ def unmask_medial(lh, rh, den="32k", atlas="fsLR", threshold=float('-inf')):
 
 @deprecated(version='0.1.0', reason="please use FSLR")
 def _get_fslr_vertex() -> tuple:
-    """
-    Get fsLR cifti's 59k vertecies' indecies.
+    """Get fsLR cifti's 59k vertices' indices.
 
-    Return
-    -----------
-    vertex_index: tuple
-        vertex index for 59k seperated in a tuple.
-        vertex_index[0] for left hemisphere, vertex_index[1] for right hemisphere.
+    Returns:
+        tuple: Vertex index for 59k separated in a tuple. vertex_index[0] for left hemisphere, vertex_index[1] for right hemisphere.
     """
     lh = FSLR['vertex_len']['L']  # 29696
     dscalar_ref = __base__ / FSLR['S1200_tp']['s1200_sulc']
@@ -415,21 +424,14 @@ def _get_fslr_vertex() -> tuple:
 
 
 def con_path_list(path: PosixPath, ls: list) -> list:
-    """
-    Concatenate a paths with multiple child files as a list.
+    """Concatenate a paths with multiple child files as a list.
 
-    Parameters
-    ----------
-    path: PosixPath
-        A PosixPath object of the parent directory.
-    ls: list
-        A list of the child relative paths.
+    Args:
+        path (PosixPath): A PosixPath object of the parent directory.
+        ls (list): A list of the child relative paths.
 
-    Returns
-    : list
-        A list of the concatenated paths.
-    -------
-
+    Returns:
+        list: A list of the concatenated paths.
     """
     con = []
     for file in ls:
@@ -438,19 +440,17 @@ def con_path_list(path: PosixPath, ls: list) -> list:
 
 
 def gen_gii_hm(data, hm) -> nib.GiftiImage:
-    """
-    Save as a gii file
+    """Save as a gii file.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(32492, n)
-        Data to save in gii.
-    hm: {'L', 'R'}
-        "L" for left hemisphere, "R" for right hemisphere.
+    Args:
+        data (np.ndarray): Data to save in gii, shape=(32492, n).
+        hm ({'L', 'R'}): "L" for left hemisphere, "R" for right hemisphere.
 
-    Returns
-    ----------
-    Nothing
+    Returns:
+        nib.GiftiImage: GIFTI object.
+
+    Raises:
+        ValueError: If hemisphere or data length is wrong.
     """
     # check hemisphere
     if hm not in ("L", "R"):
@@ -481,6 +481,18 @@ def gen_gii_hm(data, hm) -> nib.GiftiImage:
 
 
 def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
+    """Generate GIFTI for hemisphere.
+
+    Args:
+        data (np.ndarray): Input data.
+        hm (str): Hemisphere.
+
+    Returns:
+        nib.GiftiImage: GIFTI object.
+
+    Raises:
+        ValueError: If hemisphere is wrong.
+    """
     if hm not in ("L", "R"):
         raise ValueError("Wrong input for hemisphere.")
 
@@ -507,20 +519,17 @@ def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
 
 
 def gen_gii(data) -> tuple:
-    """
-    Save as a gii shape file
+    """Save as a gii shape file.
 
-    Parameters
-    ----------
-    data: np.array, shape=({'4k', '8k', '32k', '164k'}, n)
-        Data to save in gii. Length should be 64984(fslr+medial wall).
-    hm : {'L', 'R', 'LR'}, optional
-        Whether the data is one hemisphere. Default is 'LR'.
+    Args:
+        data (np.ndarray): Data to save in gii. Length should be 64984 (fslr+medial wall).
+        hm ({'L', 'R', 'LR'}, optional): Whether the data is one hemisphere. Default is 'LR'.
 
-    Returns
-    ----------
-    :tuple
-        GIFTI object of the input data
+    Returns:
+        tuple: GIFTI object of the input data.
+
+    Raises:
+        ValueError: If structure or data is invalid.
     """
 
     if isinstance(data, tuple):
@@ -558,20 +567,18 @@ def gen_gii(data) -> tuple:
 
 
 def _judge_data_type(data: np.ndarray) -> tuple:
-    """
-    Determine the data type is time series or scaler data.
-    GIFTI's timeseries is in transcope form(vertex*time) for CIFTI(time*vertex).
+    """Determine the data type is time series or scaler data.
 
-    Parameters
-    ----------
-    data: np.ndarray
-        Data to check.
+    GIFTI's timeseries is in transpose form (vertex*time) for CIFTI (time*vertex).
 
-    Returns
-    : str {'series', 'scaler'}
-        Data type.
-    -------
+    Args:
+        data (np.ndarray): Data to check.
 
+    Returns:
+        tuple: Data type and processed data.
+
+    Raises:
+        ValueError: If data dimensions exceed 2.
     """
     if len(data.shape) >= 3:
         raise ValueError("Input data should be at most 2 dimensions!")
@@ -588,28 +595,17 @@ def _judge_data_type(data: np.ndarray) -> tuple:
 
 
 def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
-    """
-    Determine the surface density and structure from the data's length.
+    """Determine the surface density and structure from the data's length.
+
     Remember some structures may have the same vertex number.
     fslr-4k and fslr-8k are symmetric and thus have the same vertex number for both hemispheres.
 
-    Parameters
-    ----------
-    data : np.ndarray
-        The input data array.
+    Args:
+        data (np.ndarray): The input data array.
 
-    Returns
-    -------
-    density : str
-        The density of the surface (e.g., '32k').
-    structure : str
-        The structure type (e.g., 'L', 'R', 'LR').
-    data_len : int
-        The length of the data.
-    data : np.ndarray
-        The processed data.
+    Returns:
+        tuple: Density, structure, data_len, data.
     """
-
     density_info = pd.read_csv(
         __base__ / 'S1200/fslr_vertex/density_info.csv')  # change path when upload to the package
     vertex_list = density_info['vertex_n'].to_numpy()
@@ -631,21 +627,14 @@ def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
 
 
 def remove_mw(data: np.ndarray, hm:bool=None) -> np.ndarray:
-    """
-    Mask the medial wall of a surface's data which contains the data for medial wall.
+    """Mask the medial wall of a surface's data which contains the data for medial wall.
 
-    Parameters
-    ----------
-    data: np.ndarray
-        The data to be masked. If you feed a data with no need to be masked, I will warn you.
-    hm: {'L', 'R'}, optional
-        If data are from half hemisphere, the hemisphere should be spefication
-        for two hemisphere are symmetric in vertex number. Default None.
+    Args:
+        data (np.ndarray): The data to be masked. If you feed a data with no need to be masked, I will warn you.
+        hm ({'L', 'R'}, optional): If data are from half hemisphere, the hemisphere should be specification for two hemisphere are symmetric in vertex number. Default None.
 
-    Returns
-    -------
-    : np.ndarray
-        Masked data with no medial wall.
+    Returns:
+        np.ndarray: Masked data with no medial wall.
     """
     # Determine the density, structure, data length, and processed data
     density, structure, data_len, data = judge_density(data)
@@ -703,21 +692,14 @@ def remove_mw(data: np.ndarray, hm:bool=None) -> np.ndarray:
 
 
 def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
-    """
-    Reverse the medial wall of a surface's data which contains the data for medial wall.
+    """Reverse the medial wall of a surface's data which contains the data for medial wall.
 
-    Parameters
-    ----------
-    data: np.ndarray
-        The data to be masked. If you feed a data with no need to be masked, I will warn you.
-    hm: {'L', 'R'}, optional
-        If data are from half hemisphere, the hemisphere should be spefication
-        for two hemisphere are symmetric in vertex number. Default None.
+    Args:
+        data (np.ndarray): The data to be masked. If you feed a data with no need to be masked, I will warn you.
+        hm ({'L', 'R'}, optional): If data are from half hemisphere, the hemisphere should be specification for two hemisphere are symmetric in vertex number. Default None.
 
-    Returns
-    -------
-    : np.ndarray
-        Masked data with no medial wall.
+    Returns:
+        np.ndarray: Masked data with no medial wall.
     """
     # density, structure, data_len, data = judge_density(data)
     # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
@@ -784,67 +766,51 @@ def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
 
 
 def second_smallest(data) -> float:
-    """
-    Find the second smallest value in an array, ignoring NaN values.
+    """Find the second smallest value in an array, ignoring NaN values.
+
     If the array has only one non-NaN value, return the minimum value.
 
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Input array that may contain NaN values
+    Args:
+        data (np.ndarray): Input array that may contain NaN values.
 
-    Returns
-    -------
-    float
-        The second smallest value in the array or the minimum if only one non-NaN value exists
+    Returns:
+        float: The second smallest value in the array or the minimum if only one non-NaN value exists.
     """
     return np.partition(data[~np.isnan(data)].flatten(), 1)[1] if len(data[~np.isnan(data)]) > 1 else np.nanmin(data)
 
 
 # second largest
 def second_largest(data: np.ndarray) -> float:
-    """
-    Find the second largest value in an array, ignoring NaN values.
+    """Find the second largest value in an array, ignoring NaN values.
+
     If the array has only one non-NaN value, return the maximum value.
 
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Input array that may contain NaN values
+    Args:
+        data (np.ndarray): Input array that may contain NaN values.
 
-    Returns
-    -------
-    float
-        The second largest value in the array or the maximum if only one non-NaN value exists
+    Returns:
+        float: The second largest value in the array or the maximum if only one non-NaN value exists.
     """
     return np.partition(data[~np.isnan(data)].flatten(), -2)[-2] if len(data[~np.isnan(data)]) > 1 else np.nanmax(data)
 
 
 def min_max(data) -> list[float, float]:
-    """
-    Find the minimum and maximum values in an array, ignoring NaN values.
+    """Find the minimum and maximum values in an array, ignoring NaN values.
 
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Input array that may contain NaN values
+    Args:
+        data (np.ndarray): Input array that may contain NaN values.
 
-    Returns
-    -------
-    tuple
-        The minimum and maximum values in the array
+    Returns:
+        tuple: The minimum and maximum values in the array.
     """
     return np.nanmin(data), np.nanmax(data)
 
 
 def get_nomw_vertex_n():
-    """
-    Get the vertex number of the data without medial wall.
+    """Get the vertex number of the data without medial wall.
 
-    Returns
-    -------
-    : list
-        List of vertex number of the data without medial wall.
+    Returns:
+        list: List of vertex number of the data without medial wall.
     """
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     return density_info.query('structure == "LR"')['vertex_n'].values

@@ -1,3 +1,11 @@
+"""
+Neuroimaging I/O utilities for handling GIFTI and CIFTI file formats.
+
+This module provides functions to save and generate GIFTI shape files and CIFTI scalar/time series images,
+primarily for cortical surface data in neuroimaging. It includes utilities for hemisphere-specific operations,
+data validation, and file I/O with nibabel.
+"""
+
 import os
 from pathlib import Path
 
@@ -16,20 +24,15 @@ nib.imageglobals.logger.setLevel(40)
 
 # GIFTI
 def save_gii_hm(data, hm, fname) -> None:
-    """
-    Save as a gii shape file
+    """Save as a gii shape file.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(32492, )
-        Data to save in gii.
-    hm: {'L', 'R'}
-        "L" for left hemisphere, "R" for right hemisphere.
-    fname: str
+    Args:
+        data (np.ndarray): Data to save in gii, shape=(32492,).
+        hm ({'L', 'R'}): "L" for left hemisphere, "R" for right hemisphere.
+        fname (str): Filename.
 
-    Returns
-    ----------
-    Nothing
+    Raises:
+        FileNotFoundError: If parent directory does not exist.
     """
     if not Path(fname).parent.exists():
         raise FileNotFoundError(f"Path(fname)parent().resolve() does not exist!")
@@ -39,20 +42,14 @@ def save_gii_hm(data, hm, fname) -> None:
 
 
 def save_gii(data, fname) -> None:
-    """
-    Save as a gii shape file
+    """Save as a gii shape file.
 
+    Args:
+        data (np.ndarray): Data to save in gii, shape=(64984,).
+        fname (str or os.PathLike): Path to be saved for two hemispheres.
 
-    Parameters
-    ----------
-    data: np.array, shape=(64984,)
-        Data to save in gii. Length should be 64984(fslr+medial wall).
-
-    fname: str or os.Pathlike
-        Path to be saved for two hemispheres.
-    Returns
-    ----------
-    Nothing
+    Raises:
+        FileNotFoundError: If parent directory does not exist.
     """
     giis = gen_gii(data)
     giis[0].to_filename(f"{fname}_hemi-L.shape.gii")
@@ -101,8 +98,13 @@ def save_gii(data, fname) -> None:
 
 
 def _gen_cii_head(hm) -> tuple:
-    """
-    Generate cifti head according to the hemisphere.
+    """Generate cifti head according to the hemisphere.
+
+    Args:
+        hm: Hemisphere specification.
+
+    Returns:
+        tuple: CIFTI header components.
     """
     # if hm not in ('L', 'R', 'LR'): # since this method could be accessed outside. Hence, check the legality
     #     raise ValueError("Not legal value for hemisphere specification!")
@@ -131,19 +133,15 @@ def _gen_cii_head(hm) -> tuple:
 
 
 def gen_cii(data) -> nib.Cifti2Image:
-    """
-    Generate scalar cifti2 object for eigher hemiphere or both hemisphere.
+    """Generate scalar cifti2 object for either hemisphere or both hemispheres.
+
     Data shouldn't contain any vertex value for medial wall.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(n, 59412)
-        The data to be saved for CIFTI.
+    Args:
+        data (np.ndarray): The data to be saved for CIFTI, shape=(n, 59412).
 
-    Returns
-    -------
-    : nib.Cifti2Image
-        A Cifti image object.
+    Returns:
+        nib.Cifti2Image: A Cifti image object.
     """
     data = np.array(data)
 
@@ -163,15 +161,14 @@ def gen_cii(data) -> nib.Cifti2Image:
 
 
 def save_cii(data: np.ndarray, fname=None) -> None:
-    """
+    """Save CIFTI data.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(59412, )
-        The data to be saved for CIFTI.
-    fname: os.path like
-        file name of the CIFTI file.
+    Args:
+        data (np.ndarray): The data to be saved for CIFTI, shape=(59412,).
+        fname (os.PathLike): File name of the CIFTI file.
 
+    Raises:
+        ValueError: If directory does not exist.
     """
     cii = gen_cii(data)
 
@@ -205,25 +202,16 @@ def save_cii(data: np.ndarray, fname=None) -> None:
 
 
 def _gen_cii_tm(data, step: float, start: float=0, unit='SECOND'):
-    """
-    Generate the CIFTI's time series object.
+    """Generate the CIFTI's time series object.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(times, 59412)
-        Time series to be saved for CIFTI.
-    step: float
-        sampling time (TR)
-    start: float, optional
-        starting time point. Defaults to 0.
-    unit: str
-        Unit of the step size (one of ‘second’, ‘hertz’, ‘meter’, or ‘radian’)
+    Args:
+        data (np.ndarray): Time series to be saved for CIFTI, shape=(times, 59412).
+        step (float): Sampling time (TR).
+        start (float, optional): Starting time point. Defaults to 0.
+        unit (str): Unit of the step size (one of ‘second’, ‘hertz’, ‘meter’, or ‘radian’).
 
-    Returns
-    : nib.Cifti2Image
-        CIFTI time series object.
-    -------
-
+    Returns:
+        nib.Cifti2Image: CIFTI time series object.
     """
     size = data.shape[0]
     series_axis = nib.cifti2.cifti2_axes.SeriesAxis(start, step, size, unit)
@@ -233,24 +221,18 @@ def _gen_cii_tm(data, step: float, start: float=0, unit='SECOND'):
     return cii
 
 def save_cii_tm(data, fname, step: float, start: float=0, unit='SECOND'):
+    """Save a CIFTI file time series data.
+
+    Args:
+        data: Time series data.
+        fname (str): Path to save the CIFTI file. Should not include "dtseries.nii" in the end.
+        start (float, optional): Starting time.
+        step: Step size.
+        unit: Unit.
+
+    Raises:
+        FileNotFoundError: If directory does not exist.
     """
-    Save a CIFTI file time series data.
-
-    Parameters
-    ----------
-    data
-    fname: str
-        Path to save the CIFTI file. Should not include "dtseries.nii" in the end.
-    start: float, optional
-
-    step
-    unit
-
-    Returns
-    -------
-
-    """
-
     fname = Path(fname)
     if not fname.parent.exists():
         raise FileNotFoundError(f"Directory {fname.parent.absolute()} does not exist!")
@@ -261,18 +243,16 @@ def save_cii_tm(data, fname, step: float, start: float=0, unit='SECOND'):
 
 
 def change_stupid_cii_save(cii, fname):
-    """
-    Convert some stupid CIFTI file whose data length is different well-knwon length.
+    """Convert some stupid CIFTI file whose data length is different from well-known length.
+
     Fortunately, no medial wall length is fixed.
 
-    Parameters
-    ----------
-    cii
-    fname
+    Args:
+        cii: CIFTI input.
+        fname: Filename.
 
-    Returns
-    -------
-
+    Raises:
+        FileNotFoundError: If directory does not exist.
     """
     fname = Path(fname)
     if not fname.parent.exists():

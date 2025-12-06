@@ -7,7 +7,7 @@ name = "neurocat"
 dynamic = ["version"] # Dynamically get version from code or file
 description = 'Neurocat is an fmri surface processing and visualization software by ailurophil.'
 readme = "README.md"
-requires-python = ">=3.10" # the test is only on 3.10
+requires-python = "==3.10.*" # supports >=3.10 <3.11
 license = "MIT"
 keywords = []
 authors = [
@@ -49,9 +49,6 @@ Documentation = "https://github.com/U.N. Owen/neurocat#readme"
 Issues = "https://github.com/U.N. Owen/neurocat/issues"
 Source = "https://github.com/U.N. Owen/neurocat"
 
-# 版本管理：从文件（如 src/mypackage/__init__.py）或 git tag 读取
-[tool.hatch.version]
-path = "src/neurocat/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
@@ -69,6 +66,9 @@ parallel = true
 omit = [
   "src/neurocat/__about__.py",
 ]
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.coverage.paths]
 neurocat = ["src/neurocat", "*/neurocat/src/neurocat"]

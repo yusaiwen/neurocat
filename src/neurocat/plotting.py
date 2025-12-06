@@ -1,11 +1,15 @@
+"""
+Brain plotting utilities for neuroimaging data.
+This module provides tools for visualizing brain data on cortical surfaces and subcortical regions using various atlases and templates. It supports plotting heatmaps, outlines, and combined surface-subcortical views with customizable configurations.
+"""
+
 # import the basic package
-import os
 import shutil
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass, replace
 from typing import Optional, Union, List, Tuple
-import inspect
+
 from deprecated.sphinx import deprecated
 
 from wand.image import Image as wand_img
@@ -40,121 +44,18 @@ nib.imageglobals.logger.setLevel(40)
 pv.set_jupyter_backend('static')  # to avoid opening a new window
 
 
-plotting_docs = dict(
-    cmap="""\
-cmap : Union[str, object], default 'coolwarm'
-    Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.\
-""",
-    color_range="""\
-color_range : Optional[Union[List[float], Tuple[float, float]]], optional
-    Minimum and maximum values for color scaling. If None, inferred from data.\
-""",
-    layout="""\
-layout : str, default 'grid'
-    Layout of the brain views ('grid', 'column', 'row').\
-""",
-    fig_name="""\
-fig_name : str, default 'brain'
-    Base name for output files.\
-""",
-    tp="""\
-tp : str, default 'fslr'
-    Template type ('s1200' or 'fslr').\
-""",
-    mesh="""\
-mesh : str, default 'veryinflated'
-    Mesh inflation type ('inflated' or 'veryinflated').\
-""",
-    trim="""\
-trim : bool, default True
-    Whether to trim whitespace from output images.\
-""",
-    pn="""\
-pn : bool, default False
-    If True, splits positive and negative values (hides 0/middle values).\
-""",
-    cbar_label="""\
-cbar_label : Optional[str], optional
-    Label for the colorbar.\
-""",
-    sulc="""\
-sulc : bool, default False
-    Whether to overlay sulcal depth information.\
-""",
-    outline="""\
-outline : bool, default False
-    Whether to draw outlines around data.\
-""",
-    system="""\
-system : bool, default False
-    Whether to overlay Yeo 7-network system boundaries.\
-""",
-    legend="""\
-legend : str, default 'legend'
-    Title for the colorbar.\
-""",
-    save="""\
-save : bool, default True
-    Whether to save the final result to disk.\
-""",
-    show="""\
-show : bool, default True
-    Whether to display the result in a notebook.\
-""",
-    if_cbar="""\
-if_cbar : bool, default True
-    Whether to generate a figure with a colorbar.\
-""",
-    force_nooutline="""\
-force_nooutline : bool, default False
-    Force disable outline even for parcel-based maps.\
-""",
-    hm="""\
-hm : str, default 'lh'
-    Hemisphere to plot ('lh' or 'rh').\
-""",
-    just_mesh="""\
-just_mesh : bool, default False
-    If True, plot only the mesh without data.\
-""",
-    config="""\
-config : PlotConfig, optional
-    Configuration object.\
-"""
-)
-
-
-def doc_formatter(func):
-    """
-    Decorator to populate placeholders in a function's docstring using plotting_docs.
-    If a key is missing, a warning is printed.
-    """
-    # Only proceed if the function actually defines a docstring.
-    if func.__doc__:
-        try:
-            # Substitute placeholders in the docstring using plotting_docs.
-            # This mirrors the original behavior: any placeholders present in
-            # func.__doc__ will be replaced by values from plotting_docs.
-            cleaned_doc = inspect.cleandoc(func.__doc__)
-            func.__doc__ = cleaned_doc.format(**plotting_docs)
-        except KeyError as e:
-            # If a placeholder key is not found, warn but leave the docstring.
-            print(f"Warning: Key {e} not found in plotting_docs")
-    return func
-
-
 # Constants
-LAYOUT_CONFIG = {
+_LAYOUT_CONFIG = {
     'grid': {'size': (1200, 850), 'zoom': 1.7},
     'column': {'size': (600, 1600), 'zoom': 1.7},
     'row': {'size': (1600, 400), 'zoom': 1.25},
     'row_hm': {'size': (800, 400), 'zoom': 1.25},
     'column_hm': {'size': (600, 800), 'zoom': 1.7}
 }
-FSLR_LEN = (59412,  # fslr 32k without medial wall
+_FSLR_LEN = (59412,  # fslr 32k without medial wall
             64984   # fslr 32k with medial wall
        )
-ATLAS_LEN = tuple(range(100,1001,100)  # Schaefer
+_ATLAS_LEN = tuple(range(100,1001,100)  # Schaefer
             ) + (998,  # Schaefer 100 fslr lack two labels
                  360,  # Glasser
             )
@@ -357,23 +258,19 @@ class BrainPlotter:
     def __init__(self, config: Optional[PlotConfig] = None, **kwargs):
         self.config = _resolve_config(config, **kwargs)
 
-    @doc_formatter
     @deprecated(version='0.1.0', reason='Old codes')
     def draw_hemisphere(self, data=None, **kwargs) -> Plot:
         """
         Draw and save a heatmap for a single hemisphere.
 
-        Parameters
-        ----------
-        data: 
-        {layout}
-        {tp}
-        {hm}
+        Args:
+            data: 
+            layout (str): Layout of the brain views ('grid', 'column', 'row').
+            tp (str): Template type ('s1200' or 'fslr').
+            hm (str): Hemisphere to plot ('lh' or 'rh').
 
-        Returns
-        -------
-        Plot
-            The surfplot Plot object.
+        Returns:
+            Plot: The surfplot Plot object.
         """
         # Set defaults specific to this function(different from others)
         kwargs.setdefault('layout', 'row')
@@ -381,9 +278,9 @@ class BrainPlotter:
         cfg = _resolve_config(self.config, **kwargs)
 
         layout_key = f'{cfg.layout}_hm'
-        if layout_key not in LAYOUT_CONFIG:
+        if layout_key not in _LAYOUT_CONFIG:
             raise ValueError(f'Invalid layout: {cfg.layout}')
-        config = LAYOUT_CONFIG[layout_key]
+        config = _LAYOUT_CONFIG[layout_key]
         size = config['size']
         zoom = config['zoom']
         
@@ -411,43 +308,40 @@ class BrainPlotter:
 
         return brain
 
-    @doc_formatter
     def draw_surface(self, data, **kwargs) -> Plot:
         """
-        Parameters
-        ----------
-        data: np.ndarray, shape=(64984 | 59412,) or any length in atlas from Schaefer, Gordon
-            Data to be plotted. Data without subcortex will be restored.
-        {cmap}
-        {color_range}
-        {layout}
-        {legend}
-        {fig_name}
-        {tp}
-        {mesh}
-        {trim}
-        {pn}
-        {show}
-        {cbar_label}
-        {system}
-        {sulc}
-        {outline}
-        {force_nooutline}
+        Render cortical data.
 
-        Returns
-        -------
-        Plot
-            The surfplot Plot object.
+        Args:
+            data (np.ndarray): Data to be plotted. Data without subcortex will be restored. Shape=(64984 | 59412,) or any length in atlas from Schaefer, Gordon.
+            cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+            color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+            layout (str): Layout of the brain views ('grid', 'column', 'row').
+            legend (str): Title for the colorbar.
+            fig_name (str): Base name for output files.
+            tp (str): Template type ('s1200' or 'fslr').
+            mesh (str): Mesh inflation type ('inflated' or 'veryinflated').
+            trim (bool): Whether to trim whitespace from output images.
+            pn (bool): If True, splits positive and negative values (hides 0/middle values).
+            show (bool): Whether to display the result in a notebook.
+            cbar_label (Optional[str]): Label for the colorbar.
+            system (bool): Whether to overlay Yeo 7-network system boundaries.
+            sulc (bool): Whether to overlay sulcal depth information.
+            outline (bool): Whether to draw outlines around data.
+            force_nooutline (bool): Force disable outline even for parcel-based maps.
+
+        Returns:
+            Plot: The surfplot Plot object.
         """
         
         cfg = _resolve_config(self.config, **kwargs)
 
-        if len(data.flatten()) not in FSLR_LEN + ATLAS_LEN:
+        if len(data.flatten()) not in _FSLR_LEN + _ATLAS_LEN:
             raise ValueError(f'Data wiht length of {len(data.flatten())} not in valid length!')
 
-        if cfg.layout not in LAYOUT_CONFIG:
+        if cfg.layout not in _LAYOUT_CONFIG:
             raise ValueError(f'Invalid layout: {cfg.layout}')
-        config = LAYOUT_CONFIG[cfg.layout]
+        config = _LAYOUT_CONFIG[cfg.layout]
         size = config['size']
         zoom = config['zoom']
 
@@ -463,7 +357,7 @@ class BrainPlotter:
 
         sulcus_data = _get_sulcus_data() if cfg.sulc else None
 
-        if len(data) in ATLAS_LEN:
+        if len(data) in _ATLAS_LEN:
             data = a2w(data)
             cfg = replace(cfg, outline=not cfg.force_nooutline)
 
@@ -478,24 +372,19 @@ class BrainPlotter:
 
         return brain
 
-    @doc_formatter
     def draw_subcortex(self, data, **kwargs):
         """
         Render subcortical data using the Tian 2020 atlas.
 
-        Parameters
-        ----------
-        data: np.ndarray
-
-        {cmap}
-        {color_range}
-        {fig_name}
-        {trim}
+        Args:
+            data (np.ndarray): 
+            cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+            color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+            fig_name (str): Base name for output files.
+            trim (bool): Whether to trim whitespace from output images.
         
-        Returns
-        -------
-        None
-
+        Returns:
+            None
         """
         kwargs.setdefault('fig_name', 'sub_tian')
         kwargs.setdefault('trim', False)
@@ -536,33 +425,28 @@ class BrainPlotter:
                     img.trim()
                     img.save(filename=f"{cfg.fig_name}_{hm}h_trim.png")
 
-    @doc_formatter
     def draw_tian2020(self, data, **kwargs):
         """
         Plot both surface (Scheafer atlas) and subcortical data (Tian atlas) and combine them.
 
-        Parameters
-        ----------
-        data: np.ndarray, shape=(1032 | 432,).
-            Data to be plotted. 
-        {cmap}
-        {color_range}
-        {fig_name}
-        {layout}
-        {pn}
-        {trim}
-        {cbar_label}
-        {tp}
-        {mesh}
-        {system}
-        {sulc}
-        {outline}
-        {just_mesh}
+        Args:
+            data (np.ndarray): Data to be plotted. Shape=(1032 | 432,).
+            cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+            color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+            fig_name (str): Base name for output files.
+            layout (str): Layout of the brain views ('grid', 'column', 'row').
+            pn (bool): If True, splits positive and negative values (hides 0/middle values).
+            trim (bool): Whether to trim whitespace from output images.
+            cbar_label (Optional[str]): Label for the colorbar.
+            tp (str): Template type ('s1200' or 'fslr').
+            mesh (str): Mesh inflation type ('inflated' or 'veryinflated').
+            system (bool): Whether to overlay Yeo 7-network system boundaries.
+            sulc (bool): Whether to overlay sulcal depth information.
+            outline (bool): Whether to draw outlines around data.
+            just_mesh (bool): If True, plot only the mesh without data.
         
-        Returns
-        -------
-        Plot
-            The surfplot Plot object.
+        Returns:
+            Plot: The surfplot Plot object.
         """
         kwargs.setdefault('fig_name', 'brain.png')
         cfg = _resolve_config(self.config, **kwargs)
@@ -593,110 +477,95 @@ class BrainPlotter:
 
 
 # Wrapper functions for backward compatibility
-@doc_formatter
 def draw_and_save_hm(data=None, config: Optional[PlotConfig] = None, **kwargs) -> Plot:
     """
     Draw and save a heatmap for a single hemisphere.
 
-    Parameters
-    ----------
-    data
-    {config}
-    {layout}
-    {tp}
-    {hm}
+    Args:
+        data: 
+        config (PlotConfig, optional): Configuration object.
+        layout (str): Layout of the brain views ('grid', 'column', 'row').
+        tp (str): Template type ('s1200' or 'fslr').
+        hm (str): Hemisphere to plot ('lh' or 'rh').
 
-    Returns
-    -------
-    Plot
-        The surfplot Plot object.
+    Returns:
+        Plot: The surfplot Plot object.
     """
     return BrainPlotter(config, **kwargs).draw_hemisphere(data)
 
 
-@doc_formatter
 def draw_and_save(data=None, config: Optional[PlotConfig] = None, **kwargs) -> Plot:
     """
-    Parameters
-    ----------
-    data: np.ndarray, shape=(64984 | 59412,) or any length in atlas from Schaefer, Gordon
-        Data to be plotted. Data without subcortex will be restored.
-    {cmap}
-    {color_range}
-    {layout}
-    {legend}
-    {fig_name}
-    {tp}
-    {mesh}
-    {trim}
-    {pn}
-    {show}
-    {cbar_label}
-    {system}
-    {sulc}
-    {outline}
-    {force_nooutline}
+    Render cortical data.
+    
+    Args:
+        data (np.ndarray): Data to be plotted. Data without subcortex will be restored. Shape=(64984 | 59412,) or any length in atlas from Schaefer, Gordon.
+        cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+        color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+        layout (str): Layout of the brain views ('grid', 'column', 'row').
+        legend (str): Title for the colorbar.
+        fig_name (str): Base name for output files.
+        tp (str): Template type ('s1200' or 'fslr').
+        mesh (str): Mesh inflation type ('inflated' or 'veryinflated').
+        trim (bool): Whether to trim whitespace from output images.
+        pn (bool): If True, splits positive and negative values (hides 0/middle values).
+        show (bool): Whether to display the result in a notebook.
+        cbar_label (Optional[str]): Label for the colorbar.
+        system (bool): Whether to overlay Yeo 7-network system boundaries.
+        sulc (bool): Whether to overlay sulcal depth information.
+        outline (bool): Whether to draw outlines around data.
+        force_nooutline (bool): Force disable outline even for parcel-based maps.
 
-    Returns
-    -------
-    Plot
-        The surfplot Plot object.
+    Returns:
+        Plot: The surfplot Plot object.
     """
     return BrainPlotter(config, **kwargs).draw_surface(data)
 
 
-@doc_formatter
 def draw_subcortex_tian(data, config: Optional[PlotConfig] = None, **kwargs):
     """
     Render subcortical data using the Tian 2020 atlas.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(1032 | 432,).
-        Data to be plotted. 
-    {cmap}
-    {color_range}
-    {fig_name}
-    {layout}
-    {pn}
-    {trim}
-    {cbar_label}
-    {tp}
-    {mesh}
-    {system}
-    {sulc}
-    {outline}
+    Args:
+        data (np.ndarray): Data to be plotted. Shape=(1032 | 432,).
+        cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+        color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+        fig_name (str): Base name for output files.
+        layout (str): Layout of the brain views ('grid', 'column', 'row').
+        pn (bool): If True, splits positive and negative values (hides 0/middle values).
+        trim (bool): Whether to trim whitespace from output images.
+        cbar_label (Optional[str]): Label for the colorbar.
+        tp (str): Template type ('s1200' or 'fslr').
+        mesh (str): Mesh inflation type ('inflated' or 'veryinflated').
+        system (bool): Whether to overlay Yeo 7-network system boundaries.
+        sulc (bool): Whether to overlay sulcal depth information.
+        outline (bool): Whether to draw outlines around data.
     """
     return BrainPlotter(config, **kwargs).draw_subcortex(data)
 
 
-@doc_formatter
 def draw_sftian_save(data=None, config: Optional[PlotConfig] = None, **kwargs):
     """
     Plot both surface (Scheafer atlas) and subcortical data (Tian atlas) and combine them.
 
-    Parameters
-    ----------
-    data: np.ndarray, shape=(1032 | 432,).
-        Data to be plotted. 
-    {cmap}
-    {color_range}
-    {fig_name}
-    {layout}
-    {pn}
-    {trim}
-    {cbar_label}
-    {tp}
-    {mesh}
-    {system}
-    {sulc}
-    {outline}
-    {just_mesh}
+    Args:
+        data (np.ndarray): Data to be plotted. Shape=(1032 | 432,).
+        cmap (Union[str, object]): Colormap to use for data visualization. Can be a string in matplotlib or any matplotlib color map object.
+        color_range (Optional[Union[List[float], Tuple[float, float]]]): Minimum and maximum values for color scaling. If None, inferred from data.
+        fig_name (str): Base name for output files.
+        layout (str): Layout of the brain views ('grid', 'column', 'row').
+        pn (bool): If True, splits positive and negative values (hides 0/middle values).
+        trim (bool): Whether to trim whitespace from output images.
+        cbar_label (Optional[str]): Label for the colorbar.
+        tp (str): Template type ('s1200' or 'fslr').
+        mesh (str): Mesh inflation type ('inflated' or 'veryinflated').
+        system (bool): Whether to overlay Yeo 7-network system boundaries.
+        sulc (bool): Whether to overlay sulcal depth information.
+        outline (bool): Whether to draw outlines around data.
+        just_mesh (bool): If True, plot only the mesh without data.
     
-    Returns
-    -------
-    Plot
-        The surfplot Plot object.
+    Returns:
+        Plot: The surfplot Plot object.
     """
     return BrainPlotter(config, **kwargs).draw_tian2020(data)
 

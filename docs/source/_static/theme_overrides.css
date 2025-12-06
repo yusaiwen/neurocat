@@ -1,0 +1,22 @@
+/* override table width restrictions */
+@media screen and (min-width: 767px) {
+
+   .wy-table-responsive table td {
+      /* !important prevents the common CSS stylesheets from overriding
+         this as on RTD they are loaded after this stylesheet */
+      white-space: normal !important;
+   }
+
+   .wy-table-responsive {
+      overflow: visible !important;
+   }
+}
+
+.headerlink::after {
+    font-size: 0px;
+}
+
+/* https://stackoverflow.com/questions/56195758/different-maxdepth-for-specific-entries-in-toctree-sphinx */
+.rst-content .toctree-wrapper:not(:last-child) ul {
+   margin-bottom: 12px;
+}
