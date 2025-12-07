@@ -6,24 +6,27 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neurocat documentation &mdash; Neurocat  documentation</title>
+  <title>neurocat &mdash; Neurocat 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
-      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
-      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
-      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
-      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=b8f8f415" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/documentation_options.js?v=d45e8c67"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/js/switcher.js?v=a49fd0bb"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation and Setup" href="installation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -34,8 +37,8 @@
 
           
           
-          <a href="#">
-            
+          <a href="#" class="icon icon-home">
+            Neurocat
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -45,11 +48,13 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Neurocat documentation</a></li>
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation and Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">User guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visulization.html">Plotting Surface</a></li>
 </ul>
-</div>
+
         </div>
       </div>
     </nav>
@@ -64,8 +69,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Neurocat documentation</li>
+      <li class="breadcrumb-item active">neurocat</li>
       <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -73,22 +79,99 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="neurocat-documentation">
-<h1>Neurocat documentation<a class="headerlink" href="#neurocat-documentation" title="Link to this heading"></a></h1>
-<p>Neurocat is a toolbox for fMRI data analysis made by a cat lover.</p>
-<div class="toctree-wrapper compound">
+  <section id="neurocat">
+<h1>neurocat<a class="headerlink" href="#neurocat" title="Link to this heading"></a></h1>
+<a class="reference external image-reference" href="https://pypi.org/project/neurocat/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/neurocat.svg" />
+</a>
+<a class="reference external image-reference" href="https://neurocat.readthedocs.io/en/latest/"><img alt="Documentation Status" src="https://img.shields.io/badge/docs-latest-brightgreen.svg" />
+</a>
+<a class="reference external image-reference" href="https://opensource.org/license/mit"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg" />
+</a>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
+<p>Neurocat is a Python package for neuroimaging data(especially <strong>surface data</strong>) processing by an ailurophile🐱. It provides utilities for surface visualization, color manipulation, data transfer between formats (e.g., CIFTI and GIFTI), I/O operations, and surface data handling. Key features include:</p>
+<ul class="simple">
+<li><p>Surface data visualization (via <code class="docutils literal notranslate"><span class="pre">neurocat.plotting</span></code>)</p></li>
+<li><p>Color gradients and colormaps (via <code class="docutils literal notranslate"><span class="pre">neurocat.color</span></code>)</p></li>
+<li><p>Data transformation and medial wall removal (via <code class="docutils literal notranslate"><span class="pre">neurocat.transfer</span></code>)</p></li>
+<li><p>Utility functions for brain models and densities (via <code class="docutils literal notranslate"><span class="pre">neurocat.util</span></code>)</p></li>
+<li><p>Saving and loading neuroimaging files (via <code class="docutils literal notranslate"><span class="pre">neurocat.io</span></code>)</p></li>
+</ul>
+</section>
+<section id="installation-requirements">
+<h2>Installation requirements<a class="headerlink" href="#installation-requirements" title="Link to this heading"></a></h2>
+<p>Currently, <code class="docutils literal notranslate"><span class="pre">neurocat</span></code> works with Python 3.10+(the developer only test on 3.10).</p>
+<p>You will also need to have Connectome Workbench installed and available on your path in order to use most of the transformation / resampling functionality of neuromaps.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>If you are using Linux, install vtk-egl first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--extra-index-url<span class="w"> </span>https://wheels.vtk.org<span class="w"> </span>vtk-egl
+</pre></div>
 </div>
+<p>Then install neurocat:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/yusaiwen/neurocat.git
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Import and use modules:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.color</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_color_gradient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.transfer</span><span class="w"> </span><span class="kn">import</span> <span class="n">remove_mw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">judge_density</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_cii</span>
+
+<span class="c1"># Example: Create a color gradient</span>
+<span class="n">gradient</span> <span class="o">=</span> <span class="n">get_color_gradient</span><span class="p">(</span><span class="s1">&#39;#FF0000&#39;</span><span class="p">,</span> <span class="s1">&#39;#0000FF&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># Example: Remove medial wall from data</span>
+<span class="n">cleaned_data</span> <span class="o">=</span> <span class="n">remove_mw</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h2>
+<p>Contributions are welcome! Please submit issues or pull requests on GitHub.</p>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p>This project is licensed under the MIT License - see the LICENSE file for details.</p>
+</section>
+<section id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation and Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#basic-installation">Basic Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">User guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/plotting.html">Plotting Brain Surfaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/transfer.html">Surface Transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/io.html">Surface File IO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/color.html">Color Map manipulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visulization.html">Plotting Surface</a></li>
+</ul>
+</div>
+</section>
 </section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation and Setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025-2025, Saiwen Yu.</p>
+    <p>&#169; Copyright 2025, Saiwen Yu.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
