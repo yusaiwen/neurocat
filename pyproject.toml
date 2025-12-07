@@ -35,6 +35,7 @@ dependencies = [
   "deprecated",
   "toml",
   "PyYAML",
+  "setuptools",
 
   "brainspace>=0.1.1",
   "surfplot==0.2.0",
@@ -44,7 +45,8 @@ dependencies = [
   "vtk-egl; sys_platform == 'linux'",
   "vtk; sys_platform != 'linux'",
   "pyvista>=0.44.1",
-  "wand"
+  "wand",
+  "reportlab"
 ]
 
 [project.urls]

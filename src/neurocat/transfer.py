@@ -11,16 +11,16 @@ import os
 from pathlib import Path
 from deprecated.sphinx import deprecated
 from typing import Union
-from brainspace.utils.parcellation import map_to_labels
 from neuromaps.transforms import fslr_to_fslr
 from .util import (FSLR,
                    __base__,
                    judge_density,
                    get_cii_gii_data,
                    gen_gii_hm, gen_gii,
-                   _data_to_ciiform, _data_to_npform, _data_to_giiform,
+                   data_to_ciiform, data_to_npform, 
+                   _get_fslr_vertex,
                    tmp_name,
-                   _get_bm,
+                   get_bm,
                    len2atlas,
                    get_atlas,
                    )
@@ -99,6 +99,133 @@ def f64k_2_59k(mw, hm: bool = False) -> Union[np.ndarray, tuple]:
         return np.concatenate(out)
     
 
+
+
+
+def map_to_mask(values, mask, fill=0, axis=0):
+    """Assign data to mask.
+
+    Parameters
+    ----------
+    values : ndarray, shape = (n_values,) or (n_samples, n_values)
+        Source array of values.
+    mask : ndarray, shape = (n_mask,)
+        Mask of boolean values. Data is mapped to mask.
+        If `values` is 2D, the mask is applied according to `axis`.
+    fill : float, optional
+        Value used to fill elements outside the mask. Default is 0.
+    axis : {0, 1}, optional
+        If ``axis == 0`` map rows. Otherwise, map columns. Default is 0.
+
+    Returns
+    -------
+    output : ndarray
+        Values mapped to mask. If `values` is 1D, shape (n_mask,).
+        When `values` is 2D, shape (n_samples, n_mask) if ``axis == 0`` and
+        (n_mask, n_samples) otherwise.
+
+    Notes
+    -----
+    This function came from brainspace(``brainspace.utils.parcellation.map_to_mask()``)
+
+    """
+
+    if np.issubdtype(values.dtype, np.integer) and not np.isfinite(fill):
+        raise ValueError("Cannot use non-finite 'fill' with integer arrays.")
+
+    if axis == 1 and values.ndim > 1:
+        values = values.T
+
+    values2d = np.atleast_2d(values)
+    if values2d.shape[1] > np.count_nonzero(mask):
+        raise ValueError("Mask cannot allocate values.")
+
+    mapped = np.full((values2d.shape[0], mask.size), fill, dtype=values.dtype)
+    mapped[:, mask] = values2d
+    if values.ndim == 1:
+        return mapped[0]
+    if axis == 1:
+        return mapped.T
+    return mapped
+
+
+def map_to_labels(source_val, target_lab, mask=None, fill=0, axis=0,
+                  source_lab=None):
+    """Map data in source to target according to their labels.
+
+    Target labels are sorted in ascending order, such that the smallest label
+    indexes the value at position 0 in `source_val`. If `source_lab` is
+    specified, any label in `target_lab` must be in `source_lab`.
+
+    Parameters
+    ----------
+    source_val : ndarray, shape = (n_values,) or (n_samples, n_values)
+        Source array of values.
+    target_lab : ndarray, shape = (n_labels,)
+        Target labels.
+    mask : int or ndarray, shape = (n_labels,), optional
+        If mask is not None, only consider target labels in mask.
+        If int, it indicates the label denoting label to discard.
+        Default is None.
+    fill : float, optional
+        Value used to fill elements outside the mask. Only used if mask is not
+        None. Default is 0.
+    axis : {0, 1}, optional
+        If ``axis == 0``, map rows. Otherwise, map columns. Default is 0.
+    source_lab : ndarray, shape = (n_values,), optional
+        Source labels for source values. If None, use unique labels in
+        `target_lab` in ascending order. Default is None.
+
+    Returns
+    -------
+    target_val : ndarray, shape = (n_labels,) or (n_samples, n_labels)
+        Target array with corresponding source values.
+
+    Notes
+    -----
+    This function came from brainspace(``brainspace.utils.parcellation.map_to_labels()``)
+
+    """
+
+    if mask is not None:
+        if not isinstance(mask, np.ndarray):
+            mask = target_lab != mask
+
+        target_lab = target_lab[mask]
+        mapped = map_to_labels(source_val, target_lab, axis=axis,
+                               source_lab=source_lab)
+        return map_to_mask(mapped, mask, fill=fill, axis=axis)
+
+    if axis == 1 and source_val.ndim > 1:
+        source_val = source_val.T
+
+    values2d = np.atleast_2d(source_val)
+
+    ulab, idx = np.unique(target_lab, return_inverse=True)
+    if ulab.size > values2d.shape[1]:
+        raise ValueError('There are more target labels than source values.')
+
+    if source_lab is not None:
+        if source_lab.size != values2d.shape[1]:
+            raise ValueError('Source values and labels must have same size.')
+
+        if not np.isin(ulab, source_lab).all():
+            raise ValueError('Cannot find target labels in source labels.')
+
+        uq_sl, idx_sl = np.unique(source_lab, return_inverse=True)
+        if source_lab.size != uq_sl.size:
+            raise ValueError('Source labels must have distinct labels.')
+
+        values2d = values2d[:, idx_sl]
+
+    mapped = values2d[:, idx]
+    if source_val.ndim == 1:
+        return mapped[0]
+    if axis == 1:
+        return mapped.T
+    return mapped
+
+
 def remove_mw(data: np.ndarray, hm=None) -> np.ndarray:
     """Mask the medial wall of a surface's data which contains the data for medial wall.
 
@@ -110,7 +237,7 @@ def remove_mw(data: np.ndarray, hm=None) -> np.ndarray:
         np.ndarray: Masked data with no medial wall.
     """
     density, structure, data_len, data = judge_density(data)
-    data = _data_to_ciiform(data)
+    data = data_to_ciiform(data)
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     need_fuck_structure = ('hmmw', 'gii2')
     need_fuck_vertexn = density_info.query('structure in @need_fuck_structure')['vertex_n'].to_numpy()
@@ -157,39 +284,9 @@ def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
     Returns:
         np.ndarray: Masked data with no medial wall.
     """
-    # density, structure, data_len, data = judge_density(data)
-    # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
-    # need_reverse_structure = ('L', 'R', 'LR')
-    # need_reverse_vertexn = density_info.query('structure in @need_reverse_structure')['vertex_n'].to_numpy()
-    #
-    # if data_len not in need_reverse_vertexn:
-    #     if structure in ('MW', 'MWL', 'MWR'):
-    #         raise ValueError('Medial wall reverse to what?')
-    #     return data
-    # mnw_index = np.load(__base__ / f'S1200/fslr_vertex/fslr-{density}_mw.npy')
-    #
-    # if structure in ('L', 'R'):  # only reverse half of the hemisphere
-    #     # if density in ('4k', '8k') and hm is None:  # 4k 8k ok syymetric
-    #     #     raise ValueError("Missing hemisphere spefication for the hemisphere with medial wall is symmetric across hemispheres!")
-    #     lh_n = density_info.query('density==@density and structure=="L"')['vertex_n'].values[0]
-    #     hmmw = density_info.query('density==@density and structure=="hmmw"')['vertex_n'].values[0]
-    #
-    #     data_mw = np.zeros((data.shape[0], hmmw)) # may generate (1, vertex)
-    #     data_mw.fill(np.nan)
-    #
-    #     if structure == 'L':  # 4k 8k ok syymetric
-    #         data_mw[:, mnw_index[:lh_n]] = data
-    #     else:
-    #         data_mw[:, mnw_index[lh_n:] - hmmw] = data
-    # else:  # LR
-    #     gii2 = density_info.query('density==@density and structure=="gii2"')['vertex_n'].values[0]
-    #     data_mw = np.zeros((data.shape[0], gii2))
-    #     data_mw.fill(np.nan)
-    #     data_mw[:, mnw_index] = data
-    #
-    # return _data_to_npform(data_mw)
+
     density, structure, data_len, data = judge_density(data)
-    data = _data_to_ciiform(data)
+    data = data_to_ciiform(data)
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     need_reverse_structure = ('L', 'R', 'LR')
     need_reverse_vertexn = density_info.query('structure in @need_reverse_structure')['vertex_n'].to_numpy()
@@ -218,7 +315,7 @@ def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
         data_mw.fill(np.nan)
         data_mw[:, mnw_index] = data
 
-    return _data_to_npform(data_mw)
+    return data_to_npform(data_mw)
 
 
 def atlas_2_wholebrain_nm(data):
@@ -420,7 +517,7 @@ def f2f(data: np.ndarray, tar_den: str, hm=None, method='linear') -> np.ndarray:
     if tar_den not in ('4k', '8k', '32k', '164k'):
         raise ValueError(f"Input target denisty({tar_den}) is not legal!")
 
-    density, structure, data_len, data = judge_density(data)
+    density, structure, _, data = judge_density(data)
     # acceptive scturecture: L, R, LR, hmmw, gii2
     # in which:
     ## L,R,LR need to reverse medial wall
@@ -447,13 +544,13 @@ def f2f(data: np.ndarray, tar_den: str, hm=None, method='linear') -> np.ndarray:
         giis[0].to_filename(giiklh_tpf)
         giikrh_tpf = tmp_name(".gii")
         giis[1].to_filename(giikrh_tpf)
-        time_end = time.time()  ##
+        
         resampled = fslr_to_fslr((giiklh_tpf, giikrh_tpf), tar_den, method=method)
         Path(giiklh_tpf).unlink(missing_ok=True)
         Path(giikrh_tpf).unlink(missing_ok=True)
 
-        resampled = _data_to_npform(np.concatenate((resampled[0].agg_data(), resampled[1].agg_data())))
-        time_end = time.time()  ##
+        resampled = data_to_npform(np.concatenate((resampled[0].agg_data(), resampled[1].agg_data())))
+        
     else:  # single hemisphere
         if hm is None:
             hm = structure
@@ -463,7 +560,7 @@ def f2f(data: np.ndarray, tar_den: str, hm=None, method='linear') -> np.ndarray:
         resampled = fslr_to_fslr(gii_tpf, tar_den, hm, method)
         Path(gii_tpf).unlink(missing_ok=True)
 
-        resampled = _data_to_npform(resampled[0].agg_data())
+        resampled = data_to_npform(resampled[0].agg_data())
 
     return resampled
 

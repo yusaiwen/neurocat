@@ -16,29 +16,34 @@ neurocat
 Description
 -----------
 
-Neurocat is a Python package for neuroimaging data processing. It provides utilities for color manipulation, data transfer between formats (e.g., CIFTI and GIFTI), I/O operations, and surface data handling. Key features include:
+Neurocat is a Python package for neuroimaging data(especially **surface data**) processing by an ailurophile🐱. It provides utilities for surface visualization, color manipulation, data transfer between formats (e.g., CIFTI and GIFTI), I/O operations, and surface data handling. Key features include:
 
+- Surface data visualization (via ``neurocat.plotting``)
 - Color gradients and colormaps (via ``neurocat.color``)
 - Data transformation and medial wall removal (via ``neurocat.transfer``)
 - Utility functions for brain models and densities (via ``neurocat.util``)
 - Saving and loading neuroimaging files (via ``neurocat.io``)
 
+Installation requirements
+-------------------------
+Currently, ``neurocat`` works with Python 3.10+(the developer only test on 3.10). 
+
+You will also need to have Connectome Workbench installed and available on your path in order to use most of the transformation / resampling functionality of neuromaps.
+
 Installation
 ------------
 
-Install from PyPI:
+If you are using Linux, install vtk-egl first:
 
 .. code-block:: bash
 
-    pip install neurocat
+    pip install --extra-index-url https://wheels.vtk.org vtk-egl
 
-Or from source:
+Then install neurocat:
 
 .. code-block:: bash
 
-    git clone https://github.com/yourusername/neurocat.git
-    cd neurocat
-    pip install .
+    pip install git+https://github.com/yusaiwen/neurocat.git
 
 Usage
 -----

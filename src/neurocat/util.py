@@ -12,13 +12,13 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 from pathlib import (Path, PosixPath)
-from typing import Union
 from deprecated.sphinx import deprecated
 import toml
 import importlib.resources as pkg_resources
 import os
 import tempfile
-from IPython.display import SVG, display, Image
+from IPython.display import Image as IPyImage, SVG, display
+from wand.image import Image as WandImage
 
 # read two config file
 __base__ = Path(pkg_resources.files("neurocat"))
@@ -46,19 +46,26 @@ def logger():
 
 # Create a temporary file in /dev/shm
 def tmp_name(suffix=None, prefix=None):
-    """Create a temporary file.
+    """
+    Create a temporary file.
 
-    If the operating system is Linux, the file should be in /dev/shm, where the files are stored in memory.
-    Instead in Windows, the file
+    If the operating system is Linux, the file is created in `/dev/shm`, where files are stored in memory.
+    On other operating systems, the default temporary directory is used.
 
-    Args:
-        suffix (str, optional): Suffix of created filename.
-        prefix (str, optional): Prefix of created filename.
+    Parameters
+    ----------
+    suffix : str, optional
+        Suffix of the created filename.
+    prefix : str, optional
+        Prefix of the created filename.
 
-    Returns:
-        str: Temporary filename; user is responsible for deletion.
+    Returns
+    -------
+    pathlib.Path
+        Path to the temporary file. The user is responsible for deletion.
     """
     import platform
+
     if platform.system() == 'Linux':
         tmp_dir = '/dev/shm'
     else: # windows and macos
@@ -72,42 +79,60 @@ def tmp_name(suffix=None, prefix=None):
 
 
 def display_pdf(pdf):
-    """Display a PDF file as SVG in Jupyter.
+    """
+    Display a PDF file as SVG in Jupyter.
 
-    Args:
-        pdf (str): Path to the PDF file.
+    Parameters
+    ----------
+    pdf : str
+        Path to the PDF file.
     """
     svg_tmp = tmp_name('.svg')
-    os.system(f'pdf2svg {pdf} {svg_tmp}')
+    with WandImage(filename=pdf) as img:
+        img.format = 'svg'
+        img.save(filename=svg_tmp)
     display(SVG(filename=svg_tmp))
     Path(svg_tmp).unlink(missing_ok=True)
 
 
 def display_pdf2(pdf):
-    """Display a PDF file as PNG in Jupyter.
+    """
+    Display a PDF file as PNG in Jupyter.
 
-    Args:
-        pdf (str): Path to the PDF file.
+    Parameters
+    ----------
+    pdf : str
+        Path to the PDF file.
     """
     png_tmp = tmp_name('.png')
-    os.system(f'convert -density 300 {pdf} {png_tmp}')
-    Image(filename=png_tmp)
+    with WandImage(filename=pdf, resolution=300) as img:
+        img.format = 'png'
+        img.save(filename=png_tmp)
+    display(IPyImage(filename=png_tmp, width=350))
     Path(png_tmp).unlink(missing_ok=True)
 
 
 # Atlas
 def _atlas_npar(atlas: str, par: int) -> Path:
-    """Get atlas path for specific parcellation.
+    """
+    Get the path of an atlas for a specific parcellation.
 
-    Args:
-        atlas (str): Atlas name.
-        par (int): Parcellation number.
+    Parameters
+    ----------
+    atlas : str
+        Name of the atlas.
+    par : int
+        Parcellation number.
 
-    Returns:
-        Path: Path to the atlas file.
+    Returns
+    -------
+    pathlib.Path
+        Path to the atlas file.
 
-    Raises:
-        ValueError: If parcellation number is not supported.
+    Raises
+    ------
+    ValueError
+        If the parcellation number is not supported.
     """
     if par == 998:  # schaefer 998 is 1000p in CIFTI version
         par = 1000
@@ -125,17 +150,25 @@ def _atlas_npar(atlas: str, par: int) -> Path:
 
 
 def get_atlas(atlas: str, par: int = None) -> Path:
-    """Get an atlas's path by name and parcel number.
+    """
+    Get the path of an atlas by name and parcellation number.
 
-    Args:
-        atlas (str): The name of the atlas.
-        par (int, optional): Parcellation number of the atlas.
+    Parameters
+    ----------
+    atlas : str
+        Name of the atlas.
+    par : int, optional
+        Parcellation number of the atlas.
 
-    Returns:
-        Path: Absolute path to the atlas file.
+    Returns
+    -------
+    pathlib.Path
+        Absolute path to the atlas file.
 
-    Raises:
-        ValueError: If atlas is not supported.
+    Raises
+    ------
+    ValueError
+        If the atlas is not supported.
     """
     if atlas not in ATLAS['ATLAS']:
         raise ValueError('Not supported atlas or you incorrectly type.')
@@ -148,20 +181,27 @@ def get_atlas(atlas: str, par: int = None) -> Path:
 
 
 def get_cii_gii_data(cg) -> np.ndarray:
-    """Return the data of GIFTI or CIFTI file.
-
-    Since nibabel uses two different methods to get the data of them.
-
-    Args:
-        cg (str or Path): Path to Cifti2Image or GiftiImage file.
-
-    Returns:
-        np.ndarray: Cifti or GIFTI's data.
-
-    Raises:
-        FileNotFoundError: If file not found.
-        ValueError: If input not GIFTI or CIFTI object.
     """
+    Return the data of a GIFTI or CIFTI file.
+
+    Parameters
+    ----------
+    cg : str or pathlib.Path
+        Path to the CIFTI or GIFTI file.
+
+    Returns
+    -------
+    numpy.ndarray
+        Data from the CIFTI or GIFTI file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file is not found.
+    ValueError
+        If the input is not a GIFTI or CIFTI object.
+    """
+    
     cg = Path(cg)
 
     if not cg.exists():
@@ -176,17 +216,49 @@ def get_cii_gii_data(cg) -> np.ndarray:
         raise ValueError(f"Input not GIFTI or CIFTI object!")
 
 
-def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
-    """Read brain model from S1200's sulcus file.
-
-    We read one important meta from S1200.sulc_MSMAll.32k_fs_LR.dscalar.nii.
-    * vertices: indicates the index of each vertex in the geometry.
-
+def get_surface_data(cg) -> np.ndarray:
+    """
+    Load surface data from CIFTI or GIFTI files.
+    This function handles both single files and pairs of files (e.g., left and right hemisphere).
+    When provided with a list of two files, it concatenates the data from both files.
     Args:
-        hm ({'L', 'R'}, optional): Hemisphere specification.
-
+        cg: Either a single file path (str) or a list of two file paths for CIFTI/GIFTI files.
+            If a list is provided, it should contain exactly two elements representing 
+            left and right hemisphere data.
     Returns:
-        nib.cifti2.BrainModelAxis: Cifti's brain model object.
+        np.ndarray: A numpy array containing the surface data. If input is a list,
+                    returns concatenated data from both files along the first axis.
+    Example:
+        >>> # Load single hemisphere
+        >>> data = get_surface_data('left_hemi.gii')
+        >>> 
+        >>> # Load both hemispheres
+        >>> data = get_surface_data(['left_hemi.gii', 'right_hemi.gii'])
+    Note:
+        This function relies on `get_cii_gii_data` function to load individual files.
+    """
+
+    if isinstance(cg, list):
+        cg1 = get_cii_gii_data(cg[0])
+        cg2 = get_cii_gii_data(cg[1])
+        return np.concatenate([cg1, cg2])
+    else:
+        return get_cii_gii_data(cg)
+
+
+def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
+    """
+    Read the brain model from the S1200 sulcus file.
+
+    Parameters
+    ----------
+    hm : {'L', 'R'}, optional
+        Hemisphere specification.
+
+    Returns
+    -------
+    nib.cifti2.BrainModelAxis
+        Brain model axis object.
     """
     # if hm not in ('L', 'R'):
     #     raise ValueError("Not legal value for hemisphere specification!")
@@ -214,14 +286,19 @@ def _get_bm_from_s1200(hm=None) -> nib.cifti2.BrainModelAxis:
     return bm_out
 
 
-def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
-    """Get Cifti's brain model.
+def get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
+    """
+    Get the brain model axis for a specified hemisphere.
 
-    Args:
-        hm ({'L', 'R', 'LR'}): Hemisphere specification.
+    Parameters
+    ----------
+    hm : {'L', 'R', 'LR'}
+        Hemisphere specification.
 
-    Returns:
-        nib.cifti2.cifti2_axes.BrainModelAxis: CIFTI's brain models.
+    Returns
+    -------
+    nib.cifti2.cifti2_axes.BrainModelAxis
+        Brain model axis object.
     """
     # if hm not in ['lh', 'rh', 'lhrh']: # since this method could be accessed outside. Hence, check the legality
     #     raise ValueError("Not legal value for hemisphere specification!")
@@ -232,19 +309,23 @@ def _get_bm(hm: str) -> nib.cifti2.cifti2_axes.BrainModelAxis:
 
 
 def _atlas2array(atlas):
-    """Convert atlas to array.
+    """
+    Convert an atlas to a NumPy array.
 
-    If the atlas is gifti/cifti file separated in two files, this function will concatenate them into one array.
-    If the atlas is just one cifti file, return the value of it.
+    Parameters
+    ----------
+    atlas : str, tuple, list, or numpy.ndarray
+        Atlas input.
 
-    Args:
-        atlas: Atlas input.
+    Returns
+    -------
+    numpy.ndarray
+        Atlas as a NumPy array.
 
-    Returns:
-        np.ndarray: Atlas as array.
-
-    Raises:
-        Exception: If atlas type is unknown or outnumbers.
+    Raises
+    ------
+    Exception
+        If the atlas type is unknown or unsupported.
     """
     if type(atlas) in [tuple, list, np.array]:
         atlas = np.array(atlas)
@@ -267,16 +348,23 @@ def _atlas2array(atlas):
 
 
 def len2atlas(data_len: int) -> str:
-    """Judge which atlas the data is based from the length of the data.
+    """
+    Determine the atlas based on the length of the data.
 
-    Args:
-        data_len (int): The length of the data.
+    Parameters
+    ----------
+    data_len : int
+        Length of the data.
 
-    Returns:
-        str: Atlas name.
+    Returns
+    -------
+    str
+        Name of the atlas.
 
-    Raises:
-        ValueError: If data length not recognized.
+    Raises
+    ------
+    ValueError
+        If the data length is not recognized.
     """
     atlas_df = pd.read_csv(__base__ / 'atlas/atlas.csv')
     # convert this dataframe to a dictionary
@@ -287,14 +375,19 @@ def len2atlas(data_len: int) -> str:
         return atlas_dic[data_len]
 
 
-def _data_to_giiform(data: np.ndarray) -> np.ndarray:
-    """Convert the data to GIFTI form (time series type are vertex*time).
+def data_to_giiform(data: np.ndarray) -> np.ndarray:
+    """
+    Convert data to GIFTI form.
 
-    Args:
-        data (np.ndarray): Input data.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input data.
 
-    Returns:
-        np.ndarray: Data in GIFTI form.
+    Returns
+    -------
+    numpy.ndarray
+        Data in GIFTI form.
     """
     shape = data.shape
 
@@ -308,17 +401,19 @@ def _data_to_giiform(data: np.ndarray) -> np.ndarray:
         return data.T
 
 
-def _data_to_npform(data: np.ndarray) -> np.ndarray:
-    """Convert the data to NUMPY form.
+def data_to_npform(data: np.ndarray) -> np.ndarray:
+    """
+    Convert data to NumPy form.
 
-    Time series type are time*vertex.
-    Scalar/shape data are 1D array (cifti are in shape=(,vertex_number) for convenience of uniform API of cii[,n]).
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input data.
 
-    Args:
-        data (np.ndarray): Input data.
-
-    Returns:
-        np.ndarray: Data in NUMPY form.
+    Returns
+    -------
+    numpy.ndarray
+        Data in NumPy form.
     """
     shape = data.shape
 
@@ -335,17 +430,19 @@ def _data_to_npform(data: np.ndarray) -> np.ndarray:
         return data
 
 
-def _data_to_ciiform(data: np.ndarray) -> np.ndarray:
-    """Convert the data to CIFTI form.
+def data_to_ciiform(data: np.ndarray) -> np.ndarray:
+    """
+    Convert data to CIFTI form.
 
-    Time series type are time*vertex.
-    Scalar/shape data are 1D array (cifti are in shape=(,vertex_number) for convenience of uniform API of cii[,n]).
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input data.
 
-    Args:
-        data (np.ndarray): Input data.
-
-    Returns:
-        np.ndarray: Data in CIFTI form.
+    Returns
+    -------
+    numpy.ndarray
+        Data in CIFTI form.
     """
     shape = data.shape
 
@@ -376,14 +473,20 @@ def fetch_data(lh, rh, den='32k', p=Path()):
 
 
 def thresh_array(data, threshold):
-    """Threshold a numpy array.
+    """
+    Threshold a NumPy array.
 
-    Values lower than the threshold become 0.
-    Values greater than or equal to threshold remain as is.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Array to threshold.
+    threshold : float
+        Threshold value.
 
-    Args:
-        data (np.ndarray): Array to threshold (one dimension).
-        threshold: Threshold value.
+    Returns
+    -------
+    numpy.ndarray
+        Thresholded array.
     """
     return data * (data >= threshold)
 
@@ -423,16 +526,24 @@ def _get_fslr_vertex() -> tuple:
     return vertex[:lh], vertex[lh:]
 
 
-def con_path_list(path: PosixPath, ls: list) -> list:
-    """Concatenate a paths with multiple child files as a list.
-
-    Args:
-        path (PosixPath): A PosixPath object of the parent directory.
-        ls (list): A list of the child relative paths.
-
-    Returns:
-        list: A list of the concatenated paths.
+def con_path_list(path: os.PathLike, ls: list) -> list:
     """
+    Concatenate a parent path with multiple child paths.
+
+    Parameters
+    ----------
+    path : os.PathLike
+        Parent directory path.
+    ls : list
+        List of child relative paths.
+
+    Returns
+    -------
+    list
+        List of concatenated paths.
+
+    """
+    path = Path(path)
     con = []
     for file in ls:
         con.append(path / file)
@@ -458,11 +569,11 @@ def gen_gii_hm(data, hm) -> nib.GiftiImage:
 
     # check data length
     _, _, data_len, _ = judge_density(data)
-    data = _data_to_giiform(data)
+    data = data_to_giiform(data)
 
     fsl_info = pd.read_csv(__base__ / "S1200/fslr_vertex/density_info.csv")
     gii2_vertexn = fsl_info.query('structure == "hmmw"')['vertex_n'].to_numpy()
-    if _data_to_ciiform(data).shape[1] not in gii2_vertexn:
+    if data_to_ciiform(data).shape[1] not in gii2_vertexn:
         raise ValueError(f"Wrong data length({len(data)})!")
 
     structure_dic = dict(L="CortexLeft",
@@ -501,7 +612,7 @@ def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
 
     # whether data is time series data?
     dtype, data = _judge_data_type(data)
-    data = _data_to_giiform(data)
+    data = data_to_giiform(data)
 
     # new the object of gifti
     gii = nib.gifti.gifti.GiftiImage()
@@ -540,7 +651,7 @@ def gen_gii(data) -> tuple:
     density, structure, data_len, data = judge_density(data)
     gii_values = density_info.query('structure in ("L", "R", "LR", "hmmw", "gii2")')['vertex_n'].to_numpy()
 
-    data = _data_to_giiform(data)
+    data = data_to_giiform(data)
 
     if structure not in ('L', 'R', 'LR', 'hmmw', 'gii2'):
         raise ValueError("Not a legal structure.")
@@ -591,7 +702,7 @@ def _judge_data_type(data: np.ndarray) -> tuple:
     else:
         dtype = 'series'
 
-    return dtype, _data_to_npform(data)
+    return dtype, data_to_npform(data)
 
 
 def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
@@ -639,7 +750,7 @@ def remove_mw(data: np.ndarray, hm:bool=None) -> np.ndarray:
     # Determine the density, structure, data length, and processed data
     density, structure, data_len, data = judge_density(data)
     # Convert data to CIFTI form for consistent processing
-    data = _data_to_ciiform(data)
+    data = data_to_ciiform(data)
     # Load density information from CSV
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     # Structures that include medial wall ('hmmw' for half hemisphere with medial wall, 'gii2' for both hemispheres)
@@ -733,7 +844,7 @@ def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
     #
     # return _data_to_npform(data_mw)
     density, structure, data_len, data = judge_density(data)
-    data = _data_to_ciiform(data)
+    data = data_to_ciiform(data)
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     need_reverse_structure = ('L', 'R', 'LR')
     need_reverse_vertexn = density_info.query('structure in @need_reverse_structure')['vertex_n'].to_numpy()
@@ -762,19 +873,22 @@ def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
         data_mw.fill(np.nan)
         data_mw[:, mnw_index] = data
 
-    return _data_to_npform(data_mw)
+    return data_to_npform(data_mw)
 
 
 def second_smallest(data) -> float:
-    """Find the second smallest value in an array, ignoring NaN values.
+    """
+    Find the second smallest value in an array, ignoring NaN values.
 
-    If the array has only one non-NaN value, return the minimum value.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input array that may contain NaN values.
 
-    Args:
-        data (np.ndarray): Input array that may contain NaN values.
-
-    Returns:
-        float: The second smallest value in the array or the minimum if only one non-NaN value exists.
+    Returns
+    -------
+    float
+        The second smallest value in the array, or the minimum if only one non-NaN value exists.
     """
     return np.partition(data[~np.isnan(data)].flatten(), 1)[1] if len(data[~np.isnan(data)]) > 1 else np.nanmin(data)
 
@@ -814,3 +928,16 @@ def get_nomw_vertex_n():
     """
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     return density_info.query('structure == "LR"')['vertex_n'].values
+
+
+def cleanup_files(file_list):
+    """
+    Remove files from the filesystem.
+
+    Parameters
+    ----------
+    file_list : list
+        List of file paths to remove.
+    """
+    for f in file_list:
+        Path(f).unlink(missing_ok=True)
