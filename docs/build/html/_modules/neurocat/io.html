@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>neurocat.io &mdash; Neurocat 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Neurocat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation and Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">User guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Neurocat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">neurocat.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for neurocat.io</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Neuroimaging I/O utilities for handling GIFTI and CIFTI file formats.</span>
+
+<span class="sd">This module provides functions to save and generate GIFTI shape files and CIFTI scalar/time series images,</span>
+<span class="sd">primarily for cortical surface data in neuroimaging. It includes utilities for hemisphere-specific operations,</span>
+<span class="sd">data validation, and file I/O with nibabel.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">nibabel</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">__base__</span><span class="p">,</span>
+                   <span class="n">FSLR</span><span class="p">,</span>
+                   <span class="n">gen_gii</span><span class="p">,</span>
+                   <span class="n">get_bm</span><span class="p">,</span> <span class="n">gen_gii_hm</span><span class="p">,</span>
+                   <span class="n">judge_density</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.transfer</span><span class="w"> </span><span class="kn">import</span> <span class="n">change_stupid_cii</span>
+
+<span class="n">nib</span><span class="o">.</span><span class="n">imageglobals</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">40</span><span class="p">)</span>
+
+
+<span class="c1"># GIFTI</span>
+<div class="viewcode-block" id="save_gii_hm">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.save_gii_hm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_gii_hm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">hm</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save as a gii shape file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): Data to save in gii, shape=(32492,).</span>
+<span class="sd">        hm ({&#39;L&#39;, &#39;R&#39;}): &quot;L&quot; for left hemisphere, &quot;R&quot; for right hemisphere.</span>
+<span class="sd">        fname (str): Filename.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If parent directory does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Path(fname)parent().resolve() does not exist!&quot;</span><span class="p">)</span>
+
+    <span class="n">gii</span> <span class="o">=</span> <span class="n">gen_gii_hm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">hm</span><span class="p">)</span>
+    <span class="n">gii</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">_hemi-</span><span class="si">{</span><span class="n">hm</span><span class="si">}</span><span class="s2">.shape.gii&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="save_gii">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.save_gii">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_gii</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save as a gii shape file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): Data to save in gii, shape=(64984,).</span>
+<span class="sd">        fname (str or os.PathLike): Path to be saved for two hemispheres.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If parent directory does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">giis</span> <span class="o">=</span> <span class="n">gen_gii</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">giis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">_hemi-L.shape.gii&quot;</span><span class="p">)</span>
+    <span class="n">giis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">_hemi-R.shape.gii&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#def save gii_label() -&gt; None:</span>
+    <span class="c1">### don&#39;t want write QAQ</span>
+
+
+<span class="c1"># cifti</span>
+
+<span class="c1"># def get_cii_nomedialmask(c):</span>
+<span class="c1">#     brain_model = c.header.get_axis(1)</span>
+<span class="c1">#     return brain_model.surface_mask</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># def _get_cii_nomedial_index(c):</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     Returns</span>
+<span class="c1">#     --------------</span>
+<span class="c1">#     index: list of index of nomedial wall index. First element is for left hemisphere, second element is for right hemisphere.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     brain_model = c.header.get_axis(1)</span>
+<span class="c1">#     mask_lh = brain_model.name == &quot;CIFTI_STRUCTURE_CORTEX_LEFT&quot;</span>
+<span class="c1">#     mask_rh = brain_model.name == &quot;CIFTI_STRUCTURE_CORTEX_RIGHT&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     index_lh = brain_model.vertex[mask_lh]  # 29696</span>
+<span class="c1">#     index_rh = brain_model.vertex[mask_rh]  # 29716</span>
+<span class="c1">#</span>
+<span class="c1">#     return [index_lh, index_rh]</span>
+
+
+<span class="c1"># def cii_64k(c):</span>
+<span class="c1">#     data_59k = c.get_fdata().flatten()</span>
+<span class="c1">#     index = _get_cii_nomedial_index(c)</span>
+<span class="c1">#</span>
+<span class="c1">#     data = [np.zeros(32492), np.zeros(32492)]</span>
+<span class="c1">#     data[0][index[0]] = data_59k[0:29696]</span>
+<span class="c1">#     data[1][index[1]] = data_59k[29696:59412]</span>
+<span class="c1">#</span>
+<span class="c1">#     return np.concatenate(data, axis=0)</span>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gen_cii_head</span><span class="p">(</span><span class="n">hm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate cifti head according to the hemisphere.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hm: Hemisphere specification.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: CIFTI header components.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if hm not in (&#39;L&#39;, &#39;R&#39;, &#39;LR&#39;): # since this method could be accessed outside. Hence, check the legality</span>
+    <span class="c1">#     raise ValueError(&quot;Not legal value for hemisphere specification!&quot;)</span>
+
+    <span class="c1"># scalar axis</span>
+    <span class="n">scalar_axis</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">cifti2</span><span class="o">.</span><span class="n">cifti2_axes</span><span class="o">.</span><span class="n">ScalarAxis</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">&quot;ysw&quot;</span><span class="p">])</span>  <span class="c1"># yes, that&#39;s my name. use my code and save my name into your data</span>
+
+    <span class="c1"># brain model</span>
+    <span class="n">bm</span> <span class="o">=</span> <span class="n">get_bm</span><span class="p">(</span><span class="n">hm</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">scalar_axis</span><span class="p">,</span> <span class="n">bm</span><span class="p">)</span>
+
+
+<span class="c1"># def _len2hemi(data) -&gt; str:</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     Judge the hemisphere from the length of the data.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     data_len = len(data)</span>
+<span class="c1">#     fs32k_vertex = FSLR[&#39;vertex_len&#39;]</span>
+<span class="c1">#</span>
+<span class="c1">#     if data_len not in [fs32k_vertex[&#39;L&#39;], fs32k_vertex[&#39;R&#39;], fs32k_vertex[&#39;LR&#39;]]:</span>
+<span class="c1">#         raise ValueError(f&quot;Input data length({data_len}) doesn&#39;t align with any/both hemisphere!&quot;)</span>
+<span class="c1">#     return fslr_info.fs32k_vertex_inv.get(data_len)</span>
+
+
+<div class="viewcode-block" id="gen_cii">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.gen_cii">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gen_cii</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nib</span><span class="o">.</span><span class="n">Cifti2Image</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate scalar cifti2 object for either hemisphere or both hemispheres.</span>
+
+<span class="sd">    Data shouldn&#39;t contain any vertex value for medial wall.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): The data to be saved for CIFTI, shape=(n, 59412).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        nib.Cifti2Image: A Cifti image object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># determine if the data is one dimension</span>
+    <span class="c1"># ndim = len(data.shape)</span>
+    <span class="c1"># if ndim != 1:</span>
+    <span class="c1">#     raise ValueError(&quot;Wrong dimension for input data to be saved as cifti.&quot;)</span>
+
+    <span class="c1"># judge which hemisphere and generate the header</span>
+    <span class="n">hm</span> <span class="o">=</span> <span class="n">judge_density</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">_gen_cii_head</span><span class="p">(</span><span class="n">hm</span><span class="p">)</span>
+
+    <span class="c1"># generate cifti2 object</span>
+    <span class="n">cii</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Cifti2Image</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">data</span><span class="p">]),</span>  <span class="c1"># just in (1, n) dimension ...</span>
+                          <span class="n">header</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cii</span></div>
+
+
+
+<div class="viewcode-block" id="save_cii">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.save_cii">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_cii</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save CIFTI data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): The data to be saved for CIFTI, shape=(59412,).</span>
+<span class="sd">        fname (os.PathLike): File name of the CIFTI file.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If directory does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cii</span> <span class="o">=</span> <span class="n">gen_cii</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Directory </span><span class="si">{</span><span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span><span class="si">}</span><span class="s2"> already exists!&quot;</span><span class="p">)</span>
+    <span class="n">cii</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># def _gen_cii_tm_head(data, step: float, start: float=0, unit=&#39;SECOND&#39;) -&gt; tuple:</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     Generate series CIFTI&#39;s head.</span>
+<span class="c1">#</span>
+<span class="c1">#     Parameters</span>
+<span class="c1">#     ----------</span>
+<span class="c1">#     start</span>
+<span class="c1">#     step</span>
+<span class="c1">#     size</span>
+<span class="c1">#     unit</span>
+<span class="c1">#</span>
+<span class="c1">#     Returns</span>
+<span class="c1">#     -------</span>
+<span class="c1">#</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     size = data.shape[0]</span>
+<span class="c1">#     series_axis = nib.cifti2.cifti2_axes.SeriesAxis(start, step, size, unit)</span>
+<span class="c1">#     bm = _get_bm(&#39;LR&#39;)</span>
+<span class="c1">#     return (series_axis, bm)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_gen_cii_tm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;SECOND&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate the CIFTI&#39;s time series object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray): Time series to be saved for CIFTI, shape=(times, 59412).</span>
+<span class="sd">        step (float): Sampling time (TR).</span>
+<span class="sd">        start (float, optional): Starting time point. Defaults to 0.</span>
+<span class="sd">        unit (str): Unit of the step size (one of ‘second’, ‘hertz’, ‘meter’, or ‘radian’).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        nib.Cifti2Image: CIFTI time series object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">series_axis</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">cifti2</span><span class="o">.</span><span class="n">cifti2_axes</span><span class="o">.</span><span class="n">SeriesAxis</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="n">bm</span> <span class="o">=</span> <span class="n">get_bm</span><span class="p">(</span><span class="s1">&#39;LR&#39;</span><span class="p">)</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="p">(</span><span class="n">series_axis</span><span class="p">,</span> <span class="n">bm</span><span class="p">)</span>
+    <span class="n">cii</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Cifti2Image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cii</span>
+
+<div class="viewcode-block" id="save_cii_tm">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.save_cii_tm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_cii_tm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;SECOND&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a CIFTI file time series data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: Time series data.</span>
+<span class="sd">        fname (str): Path to save the CIFTI file. Should not include &quot;dtseries.nii&quot; in the end.</span>
+<span class="sd">        start (float, optional): Starting time.</span>
+<span class="sd">        step: Step size.</span>
+<span class="sd">        unit: Unit.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If directory does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Directory </span><span class="si">{</span><span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span><span class="si">}</span><span class="s2"> does not exist!&quot;</span><span class="p">)</span>
+
+    <span class="n">size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cii</span> <span class="o">=</span> <span class="n">_gen_cii_tm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="n">cii</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">.dtseries.nii&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="change_stupid_cii_save">
+<a class="viewcode-back" href="../../generated/neurocat.io.html#neurocat.io.change_stupid_cii_save">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">change_stupid_cii_save</span><span class="p">(</span><span class="n">cii</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert some stupid CIFTI file whose data length is different from well-known length.</span>
+
+<span class="sd">    Fortunately, no medial wall length is fixed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cii: CIFTI input.</span>
+<span class="sd">        fname: Filename.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If directory does not exist.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span>  <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Directory </span><span class="si">{</span><span class="n">fname</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span><span class="si">}</span><span class="s2"> does not exist!&quot;</span><span class="p">)</span>
+
+    <span class="n">cii_ojb</span> <span class="o">=</span> <span class="n">change_stupid_cii</span><span class="p">(</span><span class="n">cii</span><span class="p">)</span>
+    <span class="n">cii_ojb</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fname</span><span class="si">}</span><span class="s2">.dtseries.nii&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Saiwen Yu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

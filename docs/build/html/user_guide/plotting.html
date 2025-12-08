@@ -18,9 +18,7 @@
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
-      <script src="../_static/copybutton.js?v=f281be69"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script src="../_static/js/switcher.js?v=a49fd0bb"></script>
+      <script src="../_static/copybutton.js?v=ccdb6887"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -52,15 +50,9 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../usage.html">User guide</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Plotting Brain Surfaces</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#brainplotter">BrainPlotter</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#draw-surface">draw_surface</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#draw-subcortex">draw_subcortex</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#draw-tian2020">draw_tian2020</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#legacy-functions">Legacy Functions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#mesh-utility">Mesh Utility</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#medial-wall-problem">Medial Wall Problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cortical-surface-visualization">Cortical Surface Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subcortical-visualization">Subcortical Visualization</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="transfer.html">Surface Transformation</a></li>
@@ -69,7 +61,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../visulization.html">Plotting Surface</a></li>
 </ul>
 
         </div>
@@ -101,130 +92,77 @@
 <span id="usage-plotting"></span><h1>Plotting Brain Surfaces<a class="headerlink" href="#plotting-brain-surfaces" title="Link to this heading"></a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">neurocat.plotting</span></code> module provides tools to visualize cortical and subcortical brain data
-on surface meshes. The primary interface is
-* <code class="docutils literal notranslate"><span class="pre">BrainPlotter</span></code> class, which offers:</p>
+<p>This module provides a streamlined interface for visualizing brain surface data. It includes three core functions tailored for different anatomical scopes:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">draw_cortex</span></code> – cortical data (fsLR surfaces, Schaefer/Glasser atlases)</p>
 <blockquote>
 <div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">draw_surface</span></code> – cortical data (fsLR surfaces, Schaefer/Glasser atlases)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">draw_subcortex</span></code> – subcortical data (Tian 2020 atlas)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">draw_tian2020</span></code> – combined cortical + subcortical visualization</p></li>
+<li><p>Data could be both in vertex space or parcellated space, the fucntion will map automatically</p></li>
+<li><p>Medial wall will be automatically restored if the data lack</p></li>
 </ul>
 </div></blockquote>
-<p>All methods support both vertex-wise and atlas-based input, with automatic outline detection and output to PNG/PDF formats.</p>
-</section>
-<section id="brainplotter">
-<h2>BrainPlotter<a class="headerlink" href="#brainplotter" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Maintains plotting configuration (cmap, color_range, layout, fig_name, tp, mesh, etc.).</p></li>
-<li><p>Keyword arguments override values in <code class="docutils literal notranslate"><span class="pre">PlotConfig</span></code>.</p></li>
-<li><p>Produces PNG/PDF outputs and can display inline (when <code class="docutils literal notranslate"><span class="pre">show=True</span></code>).</p></li>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">draw_subcortex_tian</span></code> – subcortical data (<a class="reference external" href="https://www.nature.com/articles/s41593-020-00711-6">Tian 2020 atlas</a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">draw_sftian</span></code> – combined cortical + subcortical visualization</p></li>
 </ul>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">BrainPlotter</span><span class="p">,</span> <span class="n">PlotConfig</span>
+</section>
+<section id="medial-wall-problem">
+<h2>Medial Wall Problem<a class="headerlink" href="#medial-wall-problem" title="Link to this heading"></a></h2>
+<p>Vertex-wise datasets often exclude the medial wall (the non-cortical connection between hemispheres). In the standard fsLR-32k space, a full surface mesh contains 64,984 vertices, but the real data is frequently restricted to the 54,984 cortical vertices that exclude the medial wall.</p>
+<p>The data overlayed on the geometry file should have the same point size. Given the geometry file includes medial wall, your data should always include the medial wall with zero value or np.nan.</p>
+<p>The <cite>draw_cortex</cite> function automatically handles this discrepancy. If your input data omits the medial wall, the function will detect and pad the data appropriately, allowing you to focus on visualization without manual preprocessing.</p>
+</section>
+<section id="cortical-surface-visualization">
+<h2>Cortical Surface Visualization<a class="headerlink" href="#cortical-surface-visualization" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">draw_cortex</span></code> is used to render the cerebral cortex.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_cortex</span> <span class="k">as</span> <span class="n">dc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat</span><span class="w"> </span><span class="kn">import</span> <span class="n">color</span>
 
-<span class="c1"># Default plotter</span>
-<span class="n">plotter</span> <span class="o">=</span> <span class="n">BrainPlotter</span><span class="p">()</span>
-
-<span class="c1"># Custom config (overridable via method kwargs)</span>
-<span class="n">cfg</span> <span class="o">=</span> <span class="n">PlotConfig</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span> <span class="n">fig_name</span><span class="o">=</span><span class="s1">&#39;demo_brain&#39;</span><span class="p">)</span>
-<span class="n">plotter</span> <span class="o">=</span> <span class="n">BrainPlotter</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dc</span><span class="p">(</span><span class="n">t1t2</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">myelin</span><span class="p">(),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="p">(</span><span class="mf">1.2</span><span class="p">,</span><span class="mf">1.6</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">legend</span><span class="o">=</span><span class="s1">&#39;T1/T2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span>  <span class="p">)</span>
 </pre></div>
 </div>
+<a class="reference internal image-reference" href="../_images/plotting_vertex.png"><img alt="../_images/plotting_vertex.png" class="align-center" src="../_images/plotting_vertex.png" style="width: 300.0px; height: 177.15px;" />
+</a>
+<p>If your data is defined/calculated in parcellated (atlas) space, you do not need to manually map it to surface vertices. <code class="docutils literal notranslate"><span class="pre">draw_cortex</span></code> performs this conversion internally.</p>
+<p>Common parcellations such as the Schaefer and Glasser atlases are supported internally; the function automatically identifies the atlas from the length of the input vector.</p>
+<p>The following example computes the principal functional connectivity gradient using the Schaefer 400-parcel atlas and visualizes the result directly on the cortical surface.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dc</span><span class="p">(</span><span class="n">fc_principal</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">gradient</span><span class="p">(),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">legend</span><span class="o">=</span><span class="s1">&#39;gradient&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span>  <span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/plotting_parc.png"><img alt="../_images/plotting_parc.png" class="align-center" src="../_images/plotting_parc.png" style="width: 300.0px; height: 177.15px;" />
+</a>
+<p>Refer to the API of <a class="reference internal" href="../generated/neurocat.plotting.html#neurocat.plotting.draw_cortex" title="neurocat.plotting.draw_cortex"><code class="xref py py-func docutils literal notranslate"><span class="pre">neurocat.plotting.draw_cortex()</span></code></a> for all possible keywords.</p>
 </section>
-<section id="methods">
-<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading"></a></h2>
-<section id="draw-surface">
-<h3>draw_surface<a class="headerlink" href="#draw-surface" title="Link to this heading"></a></h3>
-<p>Render cortical data on fsLR surfaces. Accepts vertex-wise data (59412/64984) or atlas data
-(e.g., Schaefer, Glasser). Atlas data are converted to whole-brain and outlined by default.</p>
-<p>Signature: <code class="docutils literal notranslate"><span class="pre">draw_surface(data,</span> <span class="pre">**kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">surfplot.Plot</span></code></p>
-<p>Key kwargs: <code class="docutils literal notranslate"><span class="pre">cmap</span></code>, <code class="docutils literal notranslate"><span class="pre">color_range</span></code>, <code class="docutils literal notranslate"><span class="pre">layout</span></code>, <code class="docutils literal notranslate"><span class="pre">fig_name</span></code>, <code class="docutils literal notranslate"><span class="pre">tp</span></code>, <code class="docutils literal notranslate"><span class="pre">mesh</span></code>,
-<code class="docutils literal notranslate"><span class="pre">trim</span></code>, <code class="docutils literal notranslate"><span class="pre">pn</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">cbar_label</span></code>, <code class="docutils literal notranslate"><span class="pre">system</span></code>, <code class="docutils literal notranslate"><span class="pre">sulc</span></code>, <code class="docutils literal notranslate"><span class="pre">outline</span></code>, <code class="docutils literal notranslate"><span class="pre">force_nooutline</span></code>.</p>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">BrainPlotter</span>
+<section id="subcortical-visualization">
+<h2>Subcortical Visualization<a class="headerlink" href="#subcortical-visualization" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">draw_sftian</span></code> enables simultaneous visualization of both cortical and subcortical structures. For cortical data, input should be parcellated using the Schaefer 400 or 1000 atlas; subcortical data should correspond to the Tian 2020 atlas. The combined input vector should therefore have a length of either 432 (Schaefer 400 + Tian) or 1030 (Schaefer 1000 + Tian).</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>The fsLR version of the Schaefer 1000 atlas is missing two labels due to the transformation from fsaverage6 to fsLR. For more details, see <a class="reference external" href="https://github.com/ThomasYeoLab/CBIG/issues/43">issue1</a>, <a class="reference external" href="https://github.com/ThomasYeoLab/CBIG/issues/10">issue2</a>, and <a class="reference external" href="https://github.com/netneurolab/neuromaps/issues/66">issue3</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Subcortical mesh files are provided by courtesy of <a class="reference external" href="mailto:sidhant&#46;chopra&#37;&#52;&#48;yale&#46;edu">Sidhant Chopra</a> from their <a class="reference external" href="https://github.com/sidchop/NetworkDeformationModels">work</a>. The meshes were reconstructed and smoothed using pyvista.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_cortex</span> <span class="k">as</span> <span class="n">dc</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat</span><span class="w"> </span><span class="kn">import</span> <span class="n">color</span>
 
-<span class="c1"># Schaefer-400 example data</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
-<span class="n">plotter</span> <span class="o">=</span> <span class="n">BrainPlotter</span><span class="p">()</span>
-<span class="n">plotter</span><span class="o">.</span><span class="n">draw_surface</span><span class="p">(</span>
-    <span class="n">data</span><span class="p">,</span>
-    <span class="n">fig_name</span><span class="o">=</span><span class="s1">&#39;cortex_schaefer400&#39;</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;cividis&#39;</span><span class="p">,</span>
-    <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span>
-    <span class="n">sulc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">legend</span><span class="o">=</span><span class="s1">&#39;Z-score&#39;</span>
-<span class="p">)</span>
-<span class="c1"># Outputs cortex_schaefer400.png and cortex_schaefer400.pdf</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dc</span><span class="p">(</span><span class="n">t1t2</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">myelin</span><span class="p">(),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="p">(</span><span class="mf">1.2</span><span class="p">,</span><span class="mf">1.6</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="n">legend</span><span class="o">=</span><span class="s1">&#39;T1/T2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span>  <span class="p">)</span>
 </pre></div>
 </div>
-</section>
-<section id="draw-subcortex">
-<h3>draw_subcortex<a class="headerlink" href="#draw-subcortex" title="Link to this heading"></a></h3>
-<p>Render subcortical data using Tian 2020 atlas (32 regions total, split L/R).</p>
-<p>Signature: <code class="docutils literal notranslate"><span class="pre">draw_subcortex(data,</span> <span class="pre">**kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code></p>
-<p>Key kwargs: <code class="docutils literal notranslate"><span class="pre">cmap</span></code>, <code class="docutils literal notranslate"><span class="pre">color_range</span></code>, <code class="docutils literal notranslate"><span class="pre">fig_name</span></code>, <code class="docutils literal notranslate"><span class="pre">trim</span></code>.</p>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">BrainPlotter</span>
-
-<span class="c1"># Tian S4 subcortex data (32 values)</span>
-<span class="n">sub_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
-<span class="n">plotter</span> <span class="o">=</span> <span class="n">BrainPlotter</span><span class="p">()</span>
-<span class="n">plotter</span><span class="o">.</span><span class="n">draw_subcortex</span><span class="p">(</span>
-    <span class="n">sub_data</span><span class="p">,</span>
-    <span class="n">fig_name</span><span class="o">=</span><span class="s1">&#39;sub_tian&#39;</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;plasma&#39;</span><span class="p">,</span>
-    <span class="n">trim</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># also saves *_lh_trim.png, *_rh_trim.png</span>
-<span class="p">)</span>
-<span class="c1"># Outputs sub_tian_lh.png, sub_tian_rh.png, and trimmed variants</span>
-</pre></div>
-</div>
-</section>
-<section id="draw-tian2020">
-<h3>draw_tian2020<a class="headerlink" href="#draw-tian2020" title="Link to this heading"></a></h3>
-<p>Create a combined plot: cortical (Schaefer/Glasser) + subcortical (Tian 2020).
-Input length must be 432 (Schaefer400 + Tian32) or 1032.</p>
-<p>Signature: <code class="docutils literal notranslate"><span class="pre">draw_tian2020(data,</span> <span class="pre">**kwargs)</span> <span class="pre">-&gt;</span> <span class="pre">surfplot.Plot</span></code></p>
-<p>Key kwargs: same as <code class="docutils literal notranslate"><span class="pre">draw_surface</span></code> plus <code class="docutils literal notranslate"><span class="pre">just_mesh</span></code> (for mesh-only).</p>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">BrainPlotter</span>
-
-<span class="c1"># Combined data: Schaefer-400 (400) + Tian (32) = 432</span>
-<span class="n">combined</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">432</span><span class="p">)</span>
-<span class="n">plotter</span> <span class="o">=</span> <span class="n">BrainPlotter</span><span class="p">()</span>
-<span class="n">plotter</span><span class="o">.</span><span class="n">draw_tian2020</span><span class="p">(</span>
-    <span class="n">combined</span><span class="p">,</span>
-    <span class="n">fig_name</span><span class="o">=</span><span class="s1">&#39;combined_brain&#39;</span><span class="p">,</span>
-    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span>
-    <span class="n">layout</span><span class="o">=</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span>
-    <span class="n">legend</span><span class="o">=</span><span class="s1">&#39;Intensity&#39;</span>
-<span class="p">)</span>
-<span class="c1"># Outputs combined_brain.png</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="legacy-functions">
-<h2>Legacy Functions<a class="headerlink" href="#legacy-functions" title="Link to this heading"></a></h2>
-<p>For backward compatibility:
-- <code class="docutils literal notranslate"><span class="pre">draw_and_save_hm</span></code>: single hemisphere heatmap (deprecated).
-- <code class="docutils literal notranslate"><span class="pre">draw_and_save</span></code>: calls <code class="docutils literal notranslate"><span class="pre">BrainPlotter.draw_surface</span></code>.
-- <code class="docutils literal notranslate"><span class="pre">draw_subcortex_tian</span></code>: calls <code class="docutils literal notranslate"><span class="pre">BrainPlotter.draw_subcortex</span></code>.
-- <code class="docutils literal notranslate"><span class="pre">draw_sftian_save</span></code>: calls <code class="docutils literal notranslate"><span class="pre">BrainPlotter.draw_tian2020</span></code>.</p>
-<p>Prefer using <code class="docutils literal notranslate"><span class="pre">BrainPlotter</span></code> directly in new code.</p>
-</section>
-<section id="mesh-utility">
-<h2>Mesh Utility<a class="headerlink" href="#mesh-utility" title="Link to this heading"></a></h2>
-<p>Plot only the brain mesh (no data):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_mesh</span>
-<span class="n">plot_mesh</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="s1">&#39;fslr&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;veryinflated&#39;</span><span class="p">,</span> <span class="n">hm</span><span class="o">=</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">fig_name</span><span class="o">=</span><span class="s1">&#39;mesh_left&#39;</span><span class="p">)</span>
-<span class="c1"># Outputs mesh_left.png</span>
-</pre></div>
-</div>
+<p>Refer to the API of <a class="reference internal" href="../generated/neurocat.plotting.html#neurocat.plotting.draw_sftian" title="neurocat.plotting.draw_sftian"><code class="xref py py-func docutils literal notranslate"><span class="pre">neurocat.plotting.draw_sftian()</span></code></a> for all possible keywords.</p>
 </section>
 </section>
 

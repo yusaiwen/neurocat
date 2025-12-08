@@ -36,6 +36,7 @@ dependencies = [
   "toml",
   "PyYAML",
   "setuptools",
+  "rich",
 
   "brainspace>=0.1.1",
   "surfplot==0.2.0",

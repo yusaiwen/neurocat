@@ -219,23 +219,31 @@ def get_cii_gii_data(cg) -> np.ndarray:
 def get_surface_data(cg) -> np.ndarray:
     """
     Load surface data from CIFTI or GIFTI files.
+
     This function handles both single files and pairs of files (e.g., left and right hemisphere).
     When provided with a list of two files, it concatenates the data from both files.
-    Args:
-        cg: Either a single file path (str) or a list of two file paths for CIFTI/GIFTI files.
-            If a list is provided, it should contain exactly two elements representing 
-            left and right hemisphere data.
-    Returns:
-        np.ndarray: A numpy array containing the surface data. If input is a list,
-                    returns concatenated data from both files along the first axis.
-    Example:
-        >>> # Load single hemisphere
-        >>> data = get_surface_data('left_hemi.gii')
-        >>> 
-        >>> # Load both hemispheres
-        >>> data = get_surface_data(['left_hemi.gii', 'right_hemi.gii'])
-    Note:
-        This function relies on `get_cii_gii_data` function to load individual files.
+
+    Parameters
+    ----------
+    cg : str or pathlib.Path or list
+        Path to a CIFTI or GIFTI file, or a list of two file paths (left and right hemisphere).
+
+    Returns
+    -------
+    numpy.ndarray
+        Surface data as a NumPy array. If a list is provided, returns a concatenated array.
+
+    Examples
+    --------
+    >>> # Load single hemisphere
+    >>> data = get_surface_data('left_hemi.gii')
+
+    >>> # Load both hemispheres
+    >>> data = get_surface_data(['left_hemi.gii', 'right_hemi.gii'])
+
+    Notes
+    -----
+    This function relies on `get_cii_gii_data` to load individual files.
     """
 
     if isinstance(cg, list):
@@ -458,13 +466,23 @@ def data_to_ciiform(data: np.ndarray) -> np.ndarray:
 
 @deprecated
 def fetch_data(lh, rh, den='32k', p=Path()):
-    """Give the function two hemisphere's path, concatenate them and unmask the medial wall to a left and right dictionary.
+    """Concatenate left and right hemisphere files and unmask the medial wall.
 
-    Args:
-        lh: Left hemisphere path.
-        rh: Right hemisphere path.
-        den (str): Resolution.
-        p (Path): Path object.
+    Parameters
+    ----------
+    lh : str or pathlib.Path
+        Path to the left hemisphere file.
+    rh : str or pathlib.Path
+        Path to the right hemisphere file.
+    den : str, optional
+        Resolution string (default is '32k').
+    p : pathlib.Path, optional
+        Base path.
+
+    Returns
+    -------
+    dict
+        Dictionary with 'left' and 'right' arrays after unmasking.
     """
 
     l_data, r_data = nib.load(lh).agg_data(), nib.load(rh).agg_data()
@@ -493,14 +511,25 @@ def thresh_array(data, threshold):
 
 @deprecated
 def unmask_medial(lh, rh, den="32k", atlas="fsLR", threshold=float('-inf')):
-    """Unmask medial area.
+    """Unmask the medial wall for hemisphere data arrays.
 
-    Args:
-        lh: Left hemisphere numpy array.
-        rh: Right hemisphere numpy array.
-        den (str): Resolution.
-        atlas (str): Atlas.
-        threshold: Threshold value.
+    Parameters
+    ----------
+    lh : numpy.ndarray
+        Left hemisphere data array.
+    rh : numpy.ndarray
+        Right hemisphere data array.
+    den : str, optional
+        Resolution (default '32k').
+    atlas : str, optional
+        Atlas identifier (default 'fsLR').
+    threshold : float, optional
+        Threshold value to apply to both hemispheres.
+
+    Returns
+    -------
+    dict
+        A dictionary with 'left' and 'right' arrays where the medial wall is unmasked.
     """
 
     lh, rh = thresh_array(lh, threshold), thresh_array(rh, threshold)
@@ -513,10 +542,12 @@ def unmask_medial(lh, rh, den="32k", atlas="fsLR", threshold=float('-inf')):
 
 @deprecated(version='0.1.0', reason="please use FSLR")
 def _get_fslr_vertex() -> tuple:
-    """Get fsLR cifti's 59k vertices' indices.
+    """Get fsLR CIFTI's 59k vertex indices.
 
-    Returns:
-        tuple: Vertex index for 59k separated in a tuple. vertex_index[0] for left hemisphere, vertex_index[1] for right hemisphere.
+    Returns
+    -------
+    tuple
+        A tuple of vertex indices for 59k vertices. The first element is for the left hemisphere and the second for the right hemisphere.
     """
     lh = FSLR['vertex_len']['L']  # 29696
     dscalar_ref = __base__ / FSLR['S1200_tp']['s1200_sulc']
@@ -551,17 +582,24 @@ def con_path_list(path: os.PathLike, ls: list) -> list:
 
 
 def gen_gii_hm(data, hm) -> nib.GiftiImage:
-    """Save as a gii file.
+    """Create a GIFTI object for a hemisphere.
 
-    Args:
-        data (np.ndarray): Data to save in gii, shape=(32492, n).
-        hm ({'L', 'R'}): "L" for left hemisphere, "R" for right hemisphere.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to save in GIFTI format, shape should be (32492, n).
+    hm : {'L', 'R'}
+        'L' for left hemisphere or 'R' for right hemisphere.
 
-    Returns:
-        nib.GiftiImage: GIFTI object.
+    Returns
+    -------
+    nib.GiftiImage
+        GIFTI object for the specified hemisphere.
 
-    Raises:
-        ValueError: If hemisphere or data length is wrong.
+    Raises
+    ------
+    ValueError
+        If the hemisphere is invalid or the data length is incorrect.
     """
     # check hemisphere
     if hm not in ("L", "R"):
@@ -592,17 +630,24 @@ def gen_gii_hm(data, hm) -> nib.GiftiImage:
 
 
 def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
-    """Generate GIFTI for hemisphere.
+    """Generate a GIFTI image for a single hemisphere.
 
-    Args:
-        data (np.ndarray): Input data.
-        hm (str): Hemisphere.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input data to convert to GIFTI.
+    hm : {'L', 'R'}
+        Hemisphere identifier.
 
-    Returns:
-        nib.GiftiImage: GIFTI object.
+    Returns
+    -------
+    nib.GiftiImage
+        The GIFTI image for the specified hemisphere.
 
-    Raises:
-        ValueError: If hemisphere is wrong.
+    Raises
+    ------
+    ValueError
+        If the hemisphere identifier is invalid.
     """
     if hm not in ("L", "R"):
         raise ValueError("Wrong input for hemisphere.")
@@ -630,17 +675,25 @@ def gen_gii_hm2(data: np.ndarray, hm: str = None) -> nib.GiftiImage:
 
 
 def gen_gii(data) -> tuple:
-    """Save as a gii shape file.
+    """Save data as one or two GIFTI file objects.
 
-    Args:
-        data (np.ndarray): Data to save in gii. Length should be 64984 (fslr+medial wall).
-        hm ({'L', 'R', 'LR'}, optional): Whether the data is one hemisphere. Default is 'LR'.
+    Parameters
+    ----------
+    data : numpy.ndarray or tuple
+        Data to convert to GIFTI. Length should match expected vertex counts (e.g., 64984 including medial wall).
+    hm : {'L', 'R', 'LR'}, optional
+        If specified, limit the output to a single hemisphere. If omitted, returns both hemispheres.
 
-    Returns:
-        tuple: GIFTI object of the input data.
+    Returns
+    -------
+    tuple or nib.GiftiImage
+        GIFTI object(s) that represent the input data. Returns a single GIFTI image for one hemisphere or
+        a tuple of two GIFTI images for both hemispheres.
 
-    Raises:
-        ValueError: If structure or data is invalid.
+    Raises
+    ------
+    ValueError
+        If the structure or data shape is invalid.
     """
 
     if isinstance(data, tuple):
@@ -678,18 +731,26 @@ def gen_gii(data) -> tuple:
 
 
 def _judge_data_type(data: np.ndarray) -> tuple:
-    """Determine the data type is time series or scaler data.
+    """Determine whether data represents a time series or a scalar.
 
-    GIFTI's timeseries is in transpose form (vertex*time) for CIFTI (time*vertex).
+    Notes
+    -----
+    GIFTI timeseries are stored as vertex*time, while CIFTI uses time*vertex.
 
-    Args:
-        data (np.ndarray): Data to check.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Data to classify.
 
-    Returns:
-        tuple: Data type and processed data.
+    Returns
+    -------
+    tuple
+        A pair `(dtype, data)` where `dtype` is 'series' or 'scaler' and `data` is converted to NumPy form.
 
-    Raises:
-        ValueError: If data dimensions exceed 2.
+    Raises
+    ------
+    ValueError
+        If the input array has more than two dimensions.
     """
     if len(data.shape) >= 3:
         raise ValueError("Input data should be at most 2 dimensions!")
@@ -706,16 +767,19 @@ def _judge_data_type(data: np.ndarray) -> tuple:
 
 
 def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
-    """Determine the surface density and structure from the data's length.
+    """Determine the surface density and structure from the data length.
 
-    Remember some structures may have the same vertex number.
-    fslr-4k and fslr-8k are symmetric and thus have the same vertex number for both hemispheres.
+    Some structures share the same vertex count (e.g., fslr-4k and fslr-8k), so length alone may not be unique.
 
-    Args:
-        data (np.ndarray): The input data array.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input data array.
 
-    Returns:
-        tuple: Density, structure, data_len, data.
+    Returns
+    -------
+    tuple
+        A tuple `(density, structure, data_len, data)` where density and structure are strings.
     """
     density_info = pd.read_csv(
         __base__ / 'S1200/fslr_vertex/density_info.csv')  # change path when upload to the package
@@ -738,14 +802,19 @@ def judge_density(data: np.ndarray) -> tuple[str, str, str, np.ndarray]:
 
 
 def remove_mw(data: np.ndarray, hm:bool=None) -> np.ndarray:
-    """Mask the medial wall of a surface's data which contains the data for medial wall.
+    """Remove the medial wall values from surface data that include the medial wall.
 
-    Args:
-        data (np.ndarray): The data to be masked. If you feed a data with no need to be masked, I will warn you.
-        hm ({'L', 'R'}, optional): If data are from half hemisphere, the hemisphere should be specification for two hemisphere are symmetric in vertex number. Default None.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Array containing surface data. If the medial wall is not present, the function will return the input unchanged.
+    hm : {'L', 'R'}, optional
+        Hemisphere specification for asymmetric vertex densities. Default is None.
 
-    Returns:
-        np.ndarray: Masked data with no medial wall.
+    Returns
+    -------
+    numpy.ndarray
+        Array with medial wall entries removed.
     """
     # Determine the density, structure, data length, and processed data
     density, structure, data_len, data = judge_density(data)
@@ -803,14 +872,19 @@ def remove_mw(data: np.ndarray, hm:bool=None) -> np.ndarray:
 
 
 def reverse_mw(data: np.ndarray, hm=None) -> np.ndarray:
-    """Reverse the medial wall of a surface's data which contains the data for medial wall.
+    """Restore the medial wall positions for data currently stored without the medial wall.
 
-    Args:
-        data (np.ndarray): The data to be masked. If you feed a data with no need to be masked, I will warn you.
-        hm ({'L', 'R'}, optional): If data are from half hemisphere, the hemisphere should be specification for two hemisphere are symmetric in vertex number. Default None.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Array of data without medial wall entries.
+    hm : {'L', 'R'}, optional
+        Hemisphere specification if density is asymmetric. Default is None.
 
-    Returns:
-        np.ndarray: Masked data with no medial wall.
+    Returns
+    -------
+    numpy.ndarray
+        Array with medial wall entries restored (NaN-filled where appropriate).
     """
     # density, structure, data_len, data = judge_density(data)
     # density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
@@ -895,36 +969,44 @@ def second_smallest(data) -> float:
 
 # second largest
 def second_largest(data: np.ndarray) -> float:
-    """Find the second largest value in an array, ignoring NaN values.
+    """Find the second largest value in an array, ignoring NaNs.
 
-    If the array has only one non-NaN value, return the maximum value.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input array that may contain NaN values.
 
-    Args:
-        data (np.ndarray): Input array that may contain NaN values.
-
-    Returns:
-        float: The second largest value in the array or the maximum if only one non-NaN value exists.
+    Returns
+    -------
+    float
+        The second largest value, or the maximum if only one non-NaN value exists.
     """
     return np.partition(data[~np.isnan(data)].flatten(), -2)[-2] if len(data[~np.isnan(data)]) > 1 else np.nanmax(data)
 
 
 def min_max(data) -> list[float, float]:
-    """Find the minimum and maximum values in an array, ignoring NaN values.
+    """Find the minimum and maximum values in an array, ignoring NaNs.
 
-    Args:
-        data (np.ndarray): Input array that may contain NaN values.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Input array that may contain NaN values.
 
-    Returns:
-        tuple: The minimum and maximum values in the array.
+    Returns
+    -------
+    tuple
+        A tuple with the minimum and maximum values in the array.
     """
     return np.nanmin(data), np.nanmax(data)
 
 
 def get_nomw_vertex_n():
-    """Get the vertex number of the data without medial wall.
+    """Get the vertex numbers for data without the medial wall.
 
-    Returns:
-        list: List of vertex number of the data without medial wall.
+    Returns
+    -------
+    numpy.ndarray
+        Array of vertex counts for structures that exclude the medial wall (structure == 'LR').
     """
     density_info = pd.read_csv(__base__ / 'S1200/fslr_vertex/density_info.csv')
     return density_info.query('structure == "LR"')['vertex_n'].values

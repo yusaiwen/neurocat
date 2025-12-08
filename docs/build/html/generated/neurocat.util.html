@@ -1,0 +1,737 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>neurocat.util &mdash; Neurocat 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=ccdb6887"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="neurocat.color" href="neurocat.color.html" />
+    <link rel="prev" title="neurocat.plotting" href="neurocat.plotting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Neurocat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation and Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">User guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="neurocat.plotting.html">neurocat.plotting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">neurocat.util</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.cleanup_files"><code class="docutils literal notranslate"><span class="pre">cleanup_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.con_path_list"><code class="docutils literal notranslate"><span class="pre">con_path_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.data_to_ciiform"><code class="docutils literal notranslate"><span class="pre">data_to_ciiform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.data_to_giiform"><code class="docutils literal notranslate"><span class="pre">data_to_giiform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.data_to_npform"><code class="docutils literal notranslate"><span class="pre">data_to_npform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.display_pdf"><code class="docutils literal notranslate"><span class="pre">display_pdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.display_pdf2"><code class="docutils literal notranslate"><span class="pre">display_pdf2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.gen_gii"><code class="docutils literal notranslate"><span class="pre">gen_gii()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.gen_gii_hm"><code class="docutils literal notranslate"><span class="pre">gen_gii_hm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.gen_gii_hm2"><code class="docutils literal notranslate"><span class="pre">gen_gii_hm2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.get_atlas"><code class="docutils literal notranslate"><span class="pre">get_atlas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.get_bm"><code class="docutils literal notranslate"><span class="pre">get_bm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.get_cii_gii_data"><code class="docutils literal notranslate"><span class="pre">get_cii_gii_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.get_nomw_vertex_n"><code class="docutils literal notranslate"><span class="pre">get_nomw_vertex_n()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.get_surface_data"><code class="docutils literal notranslate"><span class="pre">get_surface_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.judge_density"><code class="docutils literal notranslate"><span class="pre">judge_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.len2atlas"><code class="docutils literal notranslate"><span class="pre">len2atlas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.min_max"><code class="docutils literal notranslate"><span class="pre">min_max()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.remove_mw"><code class="docutils literal notranslate"><span class="pre">remove_mw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.reverse_mw"><code class="docutils literal notranslate"><span class="pre">reverse_mw()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.second_largest"><code class="docutils literal notranslate"><span class="pre">second_largest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.second_smallest"><code class="docutils literal notranslate"><span class="pre">second_smallest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.thresh_array"><code class="docutils literal notranslate"><span class="pre">thresh_array()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#neurocat.util.tmp_name"><code class="docutils literal notranslate"><span class="pre">tmp_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="neurocat.color.html">neurocat.color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neurocat.io.html">neurocat.io</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Neurocat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API Reference</a></li>
+      <li class="breadcrumb-item active">neurocat.util</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/generated/neurocat.util.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-neurocat.util">
+<span id="neurocat-util"></span><h1>neurocat.util<a class="headerlink" href="#module-neurocat.util" title="Link to this heading"></a></h1>
+<p>NeuroCAT utility module for neuroimaging data processing.</p>
+<p>This module provides utilities for handling CIFTI and GIFTI files, atlas management,
+brain model operations, data transformations, and surface density judgments.
+Key functions include atlas retrieval, data conversion, medial wall handling,
+and temporary file creation for neuroimaging workflows.</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.cleanup_files" title="neurocat.util.cleanup_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cleanup_files</span></code></a>(file_list)</p></td>
+<td><p>Remove files from the filesystem.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.con_path_list" title="neurocat.util.con_path_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">con_path_list</span></code></a>(path, ls)</p></td>
+<td><p>Concatenate a parent path with multiple child paths.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.data_to_ciiform" title="neurocat.util.data_to_ciiform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data_to_ciiform</span></code></a>(data)</p></td>
+<td><p>Convert data to CIFTI form.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.data_to_giiform" title="neurocat.util.data_to_giiform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data_to_giiform</span></code></a>(data)</p></td>
+<td><p>Convert data to GIFTI form.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.data_to_npform" title="neurocat.util.data_to_npform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data_to_npform</span></code></a>(data)</p></td>
+<td><p>Convert data to NumPy form.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.display_pdf" title="neurocat.util.display_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_pdf</span></code></a>(pdf)</p></td>
+<td><p>Display a PDF file as SVG in Jupyter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.display_pdf2" title="neurocat.util.display_pdf2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_pdf2</span></code></a>(pdf)</p></td>
+<td><p>Display a PDF file as PNG in Jupyter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.gen_gii" title="neurocat.util.gen_gii"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_gii</span></code></a>(data)</p></td>
+<td><p>Save data as one or two GIFTI file objects.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.gen_gii_hm" title="neurocat.util.gen_gii_hm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_gii_hm</span></code></a>(data, hm)</p></td>
+<td><p>Create a GIFTI object for a hemisphere.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.gen_gii_hm2" title="neurocat.util.gen_gii_hm2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_gii_hm2</span></code></a>(data[, hm])</p></td>
+<td><p>Generate a GIFTI image for a single hemisphere.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.get_atlas" title="neurocat.util.get_atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_atlas</span></code></a>(atlas[, par])</p></td>
+<td><p>Get the path of an atlas by name and parcellation number.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.get_bm" title="neurocat.util.get_bm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_bm</span></code></a>(hm)</p></td>
+<td><p>Get the brain model axis for a specified hemisphere.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.get_cii_gii_data" title="neurocat.util.get_cii_gii_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_cii_gii_data</span></code></a>(cg)</p></td>
+<td><p>Return the data of a GIFTI or CIFTI file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.get_nomw_vertex_n" title="neurocat.util.get_nomw_vertex_n"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nomw_vertex_n</span></code></a>()</p></td>
+<td><p>Get the vertex numbers for data without the medial wall.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.get_surface_data" title="neurocat.util.get_surface_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_surface_data</span></code></a>(cg)</p></td>
+<td><p>Load surface data from CIFTI or GIFTI files.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.judge_density" title="neurocat.util.judge_density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">judge_density</span></code></a>(data)</p></td>
+<td><p>Determine the surface density and structure from the data length.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.len2atlas" title="neurocat.util.len2atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">len2atlas</span></code></a>(data_len)</p></td>
+<td><p>Determine the atlas based on the length of the data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.min_max" title="neurocat.util.min_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">min_max</span></code></a>(data)</p></td>
+<td><p>Find the minimum and maximum values in an array, ignoring NaNs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.remove_mw" title="neurocat.util.remove_mw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_mw</span></code></a>(data[, hm])</p></td>
+<td><p>Remove the medial wall values from surface data that include the medial wall.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.reverse_mw" title="neurocat.util.reverse_mw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reverse_mw</span></code></a>(data[, hm])</p></td>
+<td><p>Restore the medial wall positions for data currently stored without the medial wall.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.second_largest" title="neurocat.util.second_largest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_largest</span></code></a>(data)</p></td>
+<td><p>Find the second largest value in an array, ignoring NaNs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.second_smallest" title="neurocat.util.second_smallest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">second_smallest</span></code></a>(data)</p></td>
+<td><p>Find the second smallest value in an array, ignoring NaN values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#neurocat.util.thresh_array" title="neurocat.util.thresh_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">thresh_array</span></code></a>(data, threshold)</p></td>
+<td><p>Threshold a NumPy array.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#neurocat.util.tmp_name" title="neurocat.util.tmp_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tmp_name</span></code></a>([suffix, prefix])</p></td>
+<td><p>Create a temporary file.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.cleanup_files">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">cleanup_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#cleanup_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.cleanup_files" title="Link to this definition"></a></dt>
+<dd><p>Remove files from the filesystem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_list</strong> (<em>list</em>) – List of file paths to remove.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.con_path_list">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">con_path_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#con_path_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.con_path_list" title="Link to this definition"></a></dt>
+<dd><p>Concatenate a parent path with multiple child paths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>path</strong> (<em>os.PathLike</em>) – Parent directory path.</p></li>
+<li><p><strong>ls</strong> (<em>list</em>) – List of child relative paths.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of concatenated paths.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.data_to_ciiform">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">data_to_ciiform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#data_to_ciiform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.data_to_ciiform" title="Link to this definition"></a></dt>
+<dd><p>Convert data to CIFTI form.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input data.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data in CIFTI form.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.data_to_giiform">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">data_to_giiform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#data_to_giiform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.data_to_giiform" title="Link to this definition"></a></dt>
+<dd><p>Convert data to GIFTI form.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input data.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data in GIFTI form.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.data_to_npform">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">data_to_npform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#data_to_npform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.data_to_npform" title="Link to this definition"></a></dt>
+<dd><p>Convert data to NumPy form.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input data.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data in NumPy form.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.display_pdf">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">display_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#display_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.display_pdf" title="Link to this definition"></a></dt>
+<dd><p>Display a PDF file as SVG in Jupyter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pdf</strong> (<em>str</em>) – Path to the PDF file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.display_pdf2">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">display_pdf2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#display_pdf2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.display_pdf2" title="Link to this definition"></a></dt>
+<dd><p>Display a PDF file as PNG in Jupyter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pdf</strong> (<em>str</em>) – Path to the PDF file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.gen_gii">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">gen_gii</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#gen_gii"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.gen_gii" title="Link to this definition"></a></dt>
+<dd><p>Save data as one or two GIFTI file objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em><em> or </em><em>tuple</em>) – Data to convert to GIFTI. Length should match expected vertex counts (e.g., 64984 including medial wall).</p></li>
+<li><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'</em><em>, </em><em>'LR'}</em><em>, </em><em>optional</em>) – If specified, limit the output to a single hemisphere. If omitted, returns both hemispheres.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GIFTI object(s) that represent the input data. Returns a single GIFTI image for one hemisphere or
+a tuple of two GIFTI images for both hemispheres.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple or nib.GiftiImage</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the structure or data shape is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.gen_gii_hm">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">gen_gii_hm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#gen_gii_hm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.gen_gii_hm" title="Link to this definition"></a></dt>
+<dd><p>Create a GIFTI object for a hemisphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">GiftiImage</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em>) – Data to save in GIFTI format, shape should be (32492, n).</p></li>
+<li><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'}</em>) – ‘L’ for left hemisphere or ‘R’ for right hemisphere.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>GIFTI object for the specified hemisphere.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>nib.GiftiImage</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the hemisphere is invalid or the data length is incorrect.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.gen_gii_hm2">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">gen_gii_hm2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#gen_gii_hm2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.gen_gii_hm2" title="Link to this definition"></a></dt>
+<dd><p>Generate a GIFTI image for a single hemisphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">GiftiImage</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input data to convert to GIFTI.</p></li>
+<li><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'}</em>) – Hemisphere identifier.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The GIFTI image for the specified hemisphere.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>nib.GiftiImage</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the hemisphere identifier is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.get_atlas">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">get_atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atlas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">par</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#get_atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.get_atlas" title="Link to this definition"></a></dt>
+<dd><p>Get the path of an atlas by name and parcellation number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>atlas</strong> (<em>str</em>) – Name of the atlas.</p></li>
+<li><p><strong>par</strong> (<em>int</em><em>, </em><em>optional</em>) – Parcellation number of the atlas.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Absolute path to the atlas file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pathlib.Path</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the atlas is not supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.get_bm">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">get_bm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#get_bm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.get_bm" title="Link to this definition"></a></dt>
+<dd><p>Get the brain model axis for a specified hemisphere.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">BrainModelAxis</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'</em><em>, </em><em>'LR'}</em>) – Hemisphere specification.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Brain model axis object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>nib.cifti2.cifti2_axes.BrainModelAxis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.get_cii_gii_data">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">get_cii_gii_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#get_cii_gii_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.get_cii_gii_data" title="Link to this definition"></a></dt>
+<dd><p>Return the data of a GIFTI or CIFTI file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>cg</strong> (<em>str</em><em> or </em><em>pathlib.Path</em>) – Path to the CIFTI or GIFTI file.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data from the CIFTI or GIFTI file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If the file is not found.</p></li>
+<li><p><strong>ValueError</strong> – If the input is not a GIFTI or CIFTI object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.get_nomw_vertex_n">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">get_nomw_vertex_n</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#get_nomw_vertex_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.get_nomw_vertex_n" title="Link to this definition"></a></dt>
+<dd><p>Get the vertex numbers for data without the medial wall.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array of vertex counts for structures that exclude the medial wall (structure == ‘LR’).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.get_surface_data">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">get_surface_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#get_surface_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.get_surface_data" title="Link to this definition"></a></dt>
+<dd><p>Load surface data from CIFTI or GIFTI files.</p>
+<p>This function handles both single files and pairs of files (e.g., left and right hemisphere).
+When provided with a list of two files, it concatenates the data from both files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>cg</strong> (<em>str</em><em> or </em><em>pathlib.Path</em><em> or </em><em>list</em>) – Path to a CIFTI or GIFTI file, or a list of two file paths (left and right hemisphere).</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Surface data as a NumPy array. If a list is provided, returns a concatenated array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load single hemisphere</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">get_surface_data</span><span class="p">(</span><span class="s1">&#39;left_hemi.gii&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Load both hemispheres</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">get_surface_data</span><span class="p">([</span><span class="s1">&#39;left_hemi.gii&#39;</span><span class="p">,</span> <span class="s1">&#39;right_hemi.gii&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>This function relies on <cite>get_cii_gii_data</cite> to load individual files.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.judge_density">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">judge_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#judge_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.judge_density" title="Link to this definition"></a></dt>
+<dd><p>Determine the surface density and structure from the data length.</p>
+<p>Some structures share the same vertex count (e.g., fslr-4k and fslr-8k), so length alone may not be unique.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input data array.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple <cite>(density, structure, data_len, data)</cite> where density and structure are strings.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.len2atlas">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">len2atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_len</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#len2atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.len2atlas" title="Link to this definition"></a></dt>
+<dd><p>Determine the atlas based on the length of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data_len</strong> (<em>int</em>) – Length of the data.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the atlas.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the data length is not recognized.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.min_max">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">min_max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#min_max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.min_max" title="Link to this definition"></a></dt>
+<dd><p>Find the minimum and maximum values in an array, ignoring NaNs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input array that may contain NaN values.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple with the minimum and maximum values in the array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.remove_mw">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">remove_mw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#remove_mw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.remove_mw" title="Link to this definition"></a></dt>
+<dd><p>Remove the medial wall values from surface data that include the medial wall.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em>) – Array containing surface data. If the medial wall is not present, the function will return the input unchanged.</p></li>
+<li><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'}</em><em>, </em><em>optional</em>) – Hemisphere specification for asymmetric vertex densities. Default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array with medial wall entries removed.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.reverse_mw">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">reverse_mw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#reverse_mw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.reverse_mw" title="Link to this definition"></a></dt>
+<dd><p>Restore the medial wall positions for data currently stored without the medial wall.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em>) – Array of data without medial wall entries.</p></li>
+<li><p><strong>hm</strong> (<em>{'L'</em><em>, </em><em>'R'}</em><em>, </em><em>optional</em>) – Hemisphere specification if density is asymmetric. Default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array with medial wall entries restored (NaN-filled where appropriate).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.second_largest">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">second_largest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#second_largest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.second_largest" title="Link to this definition"></a></dt>
+<dd><p>Find the second largest value in an array, ignoring NaNs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input array that may contain NaN values.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The second largest value, or the maximum if only one non-NaN value exists.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.second_smallest">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">second_smallest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#second_smallest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.second_smallest" title="Link to this definition"></a></dt>
+<dd><p>Find the second smallest value in an array, ignoring NaN values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> (<em>numpy.ndarray</em>) – Input array that may contain NaN values.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The second smallest value in the array, or the minimum if only one non-NaN value exists.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.thresh_array">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">thresh_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#thresh_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.thresh_array" title="Link to this definition"></a></dt>
+<dd><p>Threshold a NumPy array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>numpy.ndarray</em>) – Array to threshold.</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Threshold value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Thresholded array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="neurocat.util.tmp_name">
+<span class="sig-prename descclassname"><span class="pre">neurocat.util.</span></span><span class="sig-name descname"><span class="pre">tmp_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/neurocat/util.html#tmp_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neurocat.util.tmp_name" title="Link to this definition"></a></dt>
+<dd><p>Create a temporary file.</p>
+<p>If the operating system is Linux, the file is created in <cite>/dev/shm</cite>, where files are stored in memory.
+On other operating systems, the default temporary directory is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>suffix</strong> (<em>str</em><em>, </em><em>optional</em>) – Suffix of the created filename.</p></li>
+<li><p><strong>prefix</strong> (<em>str</em><em>, </em><em>optional</em>) – Prefix of the created filename.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path to the temporary file. The user is responsible for deletion.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pathlib.Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="neurocat.plotting.html" class="btn btn-neutral float-left" title="neurocat.plotting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="neurocat.color.html" class="btn btn-neutral float-right" title="neurocat.color" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Saiwen Yu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

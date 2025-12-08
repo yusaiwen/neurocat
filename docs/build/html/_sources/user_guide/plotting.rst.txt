@@ -6,157 +6,90 @@ Plotting Brain Surfaces
 Overview
 --------
 
-The ``neurocat.plotting`` module provides tools to visualize cortical and subcortical brain data
-on surface meshes. The primary interface is 
-* ``BrainPlotter`` class, which offers:
+This module provides a streamlined interface for visualizing brain surface data. It includes three core functions tailored for different anatomical scopes:
+
 
   
-  * ``draw_surface`` – cortical data (fsLR surfaces, Schaefer/Glasser atlases)
-  * ``draw_subcortex`` – subcortical data (Tian 2020 atlas)
-  * ``draw_tian2020`` – combined cortical + subcortical visualization
+* ``draw_cortex`` – cortical data (fsLR surfaces, Schaefer/Glasser atlases)
 
-All methods support both vertex-wise and atlas-based input, with automatic outline detection and output to PNG/PDF formats.
-
-
-BrainPlotter
-------------
+    * Data could be both in vertex space or parcellated space, the fucntion will map automatically
+    * Medial wall will be automatically restored if the data lack
+  
+* ``draw_subcortex_tian`` – subcortical data (`Tian 2020 atlas <https://www.nature.com/articles/s41593-020-00711-6>`_) 
+* ``draw_sftian`` – combined cortical + subcortical visualization
 
 
+Medial Wall Problem
+--------------------
+Vertex-wise datasets often exclude the medial wall (the non-cortical connection between hemispheres). In the standard fsLR-32k space, a full surface mesh contains 64,984 vertices, but the real data is frequently restricted to the 54,984 cortical vertices that exclude the medial wall.
 
-- Maintains plotting configuration (cmap, color_range, layout, fig_name, tp, mesh, etc.).
-- Keyword arguments override values in ``PlotConfig``.
-- Produces PNG/PDF outputs and can display inline (when ``show=True``).
+The data overlayed on the geometry file should have the same point size. Given the geometry file includes medial wall, your data should always include the medial wall with zero value or np.nan.
 
-Example:
+The `draw_cortex` function automatically handles this discrepancy. If your input data omits the medial wall, the function will detect and pad the data appropriately, allowing you to focus on visualization without manual preprocessing.
 
-.. code-block:: python
+Cortical Surface Visualization
+------------------------------
 
-    import numpy as np
-    from neurocat.plotting import BrainPlotter, PlotConfig
-
-    # Default plotter
-    plotter = BrainPlotter()
-
-    # Custom config (overridable via method kwargs)
-    cfg = PlotConfig(cmap='viridis', layout='grid', fig_name='demo_brain')
-    plotter = BrainPlotter(cfg)
-
-
-Methods
--------
-
-draw_surface
-~~~~~~~~~~~~
-
-Render cortical data on fsLR surfaces. Accepts vertex-wise data (59412/64984) or atlas data
-(e.g., Schaefer, Glasser). Atlas data are converted to whole-brain and outlined by default.
-
-Signature: ``draw_surface(data, **kwargs) -> surfplot.Plot``
-
-Key kwargs: ``cmap``, ``color_range``, ``layout``, ``fig_name``, ``tp``, ``mesh``,
-``trim``, ``pn``, ``show``, ``cbar_label``, ``system``, ``sulc``, ``outline``, ``force_nooutline``.
-
-Example:
+``draw_cortex`` is used to render the cerebral cortex.
 
 .. code-block:: python
 
-    import numpy as np
-    from neurocat.plotting import BrainPlotter
+    >>> from neurocat.plotting import draw_cortex as dc
+    >>> from neurocat import color
+    
+    >>> dc(t1t2,
+    >>>    color.cmap.myelin(),
+    >>>    (1.2,1.6),
+    >>>    legend='T1/T2'
+    >>>   )
 
-    # Schaefer-400 example data
-    data = np.random.rand(400)
-    plotter = BrainPlotter()
-    plotter.draw_surface(
-        data,
-        fig_name='cortex_schaefer400',
-        cmap='cividis',
-        layout='grid',
-        sulc=True,
-        legend='Z-score'
-    )
-    # Outputs cortex_schaefer400.png and cortex_schaefer400.pdf
+.. image:: ./_images/plotting_vertex.png
+   :scale: 15%
+   :align: center
 
-draw_subcortex
-~~~~~~~~~~~~~~
+If your data is defined/calculated in parcellated (atlas) space, you do not need to manually map it to surface vertices. ``draw_cortex`` performs this conversion internally.
 
-Render subcortical data using Tian 2020 atlas (32 regions total, split L/R).
+Common parcellations such as the Schaefer and Glasser atlases are supported internally; the function automatically identifies the atlas from the length of the input vector.
 
-Signature: ``draw_subcortex(data, **kwargs) -> None``
+The following example computes the principal functional connectivity gradient using the Schaefer 400-parcel atlas and visualizes the result directly on the cortical surface.
 
-Key kwargs: ``cmap``, ``color_range``, ``fig_name``, ``trim``.
+.. code-block:: python
+    
+    >>> dc(fc_principal,
+    >>>    color.cmap.gradient(),
+    >>>    (-5,5),
+    >>>    legend='gradient'
+    >>>   )
 
-Example:
+.. image:: ./_images/plotting_parc.png
+   :scale: 15%
+   :align: center
+
+Refer to the API of :func:`neurocat.plotting.draw_cortex` for all possible keywords.
+
+Subcortical Visualization
+--------------------------
+
+``draw_sftian`` enables simultaneous visualization of both cortical and subcortical structures. For cortical data, input should be parcellated using the Schaefer 400 or 1000 atlas; subcortical data should correspond to the Tian 2020 atlas. The combined input vector should therefore have a length of either 432 (Schaefer 400 + Tian) or 1030 (Schaefer 1000 + Tian).
+
+.. attention::
+
+    The fsLR version of the Schaefer 1000 atlas is missing two labels due to the transformation from fsaverage6 to fsLR. For more details, see `issue1 <https://github.com/ThomasYeoLab/CBIG/issues/43>`_, `issue2 <https://github.com/ThomasYeoLab/CBIG/issues/10>`_, and `issue3 <https://github.com/netneurolab/neuromaps/issues/66>`_.
+
+.. note::
+
+    Subcortical mesh files are provided by courtesy of `Sidhant Chopra <mailto:sidhant.chopra@yale.edu>`_ from their `work <https://github.com/sidchop/NetworkDeformationModels>`_. The meshes were reconstructed and smoothed using pyvista.
 
 .. code-block:: python
 
-    import numpy as np
-    from neurocat.plotting import BrainPlotter
+    >>> from neurocat.plotting import draw_cortex as dc
+    >>> from neurocat import color
+    
+    >>> dc(t1t2,
+    >>>    color.cmap.myelin(),
+    >>>    (1.2,1.6),
+    >>>    legend='T1/T2'
+    >>>   )
 
-    # Tian S4 subcortex data (32 values)
-    sub_data = np.random.rand(32)
-    plotter = BrainPlotter()
-    plotter.draw_subcortex(
-        sub_data,
-        fig_name='sub_tian',
-        cmap='plasma',
-        trim=True  # also saves *_lh_trim.png, *_rh_trim.png
-    )
-    # Outputs sub_tian_lh.png, sub_tian_rh.png, and trimmed variants
-
-draw_tian2020
-~~~~~~~~~~~~~
-
-Create a combined plot: cortical (Schaefer/Glasser) + subcortical (Tian 2020).
-Input length must be 432 (Schaefer400 + Tian32) or 1032.
-
-Signature: ``draw_tian2020(data, **kwargs) -> surfplot.Plot``
-
-Key kwargs: same as ``draw_surface`` plus ``just_mesh`` (for mesh-only).
-
-Example:
-
-.. code-block:: python
-
-    import numpy as np
-    from neurocat.plotting import BrainPlotter
-
-    # Combined data: Schaefer-400 (400) + Tian (32) = 432
-    combined = np.random.rand(432)
-    plotter = BrainPlotter()
-    plotter.draw_tian2020(
-        combined,
-        fig_name='combined_brain',
-        cmap='viridis',
-        layout='grid',
-        legend='Intensity'
-    )
-    # Outputs combined_brain.png
-
-Legacy Functions
-----------------
-
-For backward compatibility:
-- ``draw_and_save_hm``: single hemisphere heatmap (deprecated).
-- ``draw_and_save``: calls ``BrainPlotter.draw_surface``.
-- ``draw_subcortex_tian``: calls ``BrainPlotter.draw_subcortex``.
-- ``draw_sftian_save``: calls ``BrainPlotter.draw_tian2020``.
-
-Prefer using ``BrainPlotter`` directly in new code.
-
-Mesh Utility
-------------
-
-Plot only the brain mesh (no data):
-
-.. code-block:: python
-
-    from neurocat.plotting import plot_mesh
-    plot_mesh(tp='fslr', mesh='veryinflated', hm='L', fig_name='mesh_left')
-    # Outputs mesh_left.png
-
-
-
-
-
-
+Refer to the API of :func:`neurocat.plotting.draw_sftian` for all possible keywords.
 

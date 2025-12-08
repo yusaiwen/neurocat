@@ -14,9 +14,8 @@ import numpy as np
 from .util import (__base__,
                    FSLR,
                    gen_gii,
-                   _get_bm, gen_gii_hm,
-                   judge_density,
-                   _get_bm_from_s1200)
+                   get_bm, gen_gii_hm,
+                   judge_density)
 from .transfer import change_stupid_cii
 
 nib.imageglobals.logger.setLevel(40)
@@ -114,7 +113,7 @@ def _gen_cii_head(hm) -> tuple:
         ["ysw"])  # yes, that's my name. use my code and save my name into your data
 
     # brain model
-    bm = _get_bm(hm)
+    bm = get_bm(hm)
 
     return (scalar_axis, bm)
 
@@ -215,7 +214,7 @@ def _gen_cii_tm(data, step: float, start: float=0, unit='SECOND'):
     """
     size = data.shape[0]
     series_axis = nib.cifti2.cifti2_axes.SeriesAxis(start, step, size, unit)
-    bm = _get_bm('LR')
+    bm = get_bm('LR')
     header = (series_axis, bm)
     cii = nib.Cifti2Image(data, header)
     return cii

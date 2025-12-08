@@ -123,7 +123,7 @@ def save_cm(cm, name):
     plt.gca().set_visible(False)
     cax = plt.axes([0.1, 0.2, 0.8, 0.6])
     plt.colorbar(orientation="horizontal", cax=cax)
-    plt.savefig(f"output/{name}.pdf")
+    plt.savefig(f"{name}.pdf")
 
 
 # classic color bar outside of matplotlib

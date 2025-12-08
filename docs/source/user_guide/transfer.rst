@@ -11,5 +11,5 @@ The GIFTI geometry of brain surface has medial wall, which is often omitted in t
 * ``transfer.reverse_mw()`` to restore the medial wall
 
 
-
+不想写了
     

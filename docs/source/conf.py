@@ -29,13 +29,26 @@ language = 'en'
 extensions = [
     'sphinx.ext.autodoc',  # Automatically generates documentation from docstrings
     'sphinx.ext.autosummary',  # Generates summary tables for modules and classes
+    'sphinx_autodoc_typehints',  # beautify the function
     'sphinx.ext.napoleon',  # Supports Google and NumPy style docstrings
     'sphinx_copybutton',  # Adds a copy button to code blocks
     'sphinx.ext.mathjax',  # Enables MathJax for rendering mathematical expressions
     'sphinx.ext.viewcode',  # Adds links to source code in documentation
-    'nbsphinx'  # Generates galleries for examples
+    #'nbsphinx',  # Generates galleries for examples
+    
     
 ]
+
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
+
+autodoc_typehints = 'description'
+
+# Generate the API documentation when building
+autosummary_generate = True
+autodoc_default_options = {'members': True, 'inherited-members': True}
+numpydoc_show_class_members = True
+autoclass_content = "class"
 
 templates_path = ['_templates']
 
@@ -53,9 +66,7 @@ pygments_style = 'sphinx'
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
-html_js_files = [
-    'js/switcher.js',
-]
 
 
-nbsphinx_execute = 'never'
+
+# nbsphinx_execute = 'never'

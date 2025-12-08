@@ -18,9 +18,7 @@
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
-      <script src="../_static/copybutton.js?v=f281be69"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-      <script src="../_static/js/switcher.js?v=a49fd0bb"></script>
+      <script src="../_static/copybutton.js?v=ccdb6887"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -53,11 +51,13 @@
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">Plotting Brain Surfaces</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transfer.html">Surface Transformation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="io.html">Surface File IO</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Color Map manipulation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Color Map manipulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pre-defined-color-maps">Pre-defined Color Maps</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../visulization.html">Plotting Surface</a></li>
 </ul>
 
         </div>
@@ -87,6 +87,34 @@
              
   <section id="color-map-manipulation">
 <span id="usage-color"></span><h1>Color Map manipulation<a class="headerlink" href="#color-map-manipulation" title="Link to this heading"></a></h1>
+<p>When it comes to the visualization the brain map, it is wise to attach an appropriate color map.
+The choice of the color map depends on the type of the data and the message to convey to the readers.</p>
+<section id="pre-defined-color-maps">
+<h2>Pre-defined Color Maps<a class="headerlink" href="#pre-defined-color-maps" title="Link to this heading"></a></h2>
+<p>For example, the gradient color map was desinged to highlight the <strong>very high</strong> and <strong>very low</strong> values, which corresponds to the information by functional gradient.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">neurocat</span><span class="w"> </span><span class="kn">import</span> <span class="n">color</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">gradient</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/gradient.svg" class="align-center" src="../_images/gradient.svg" />
+<p>Besides, <cite>neurocat</cite> made some commonly used color map that don’t exit in matplotlib.
+They were all stored in <code class="xref py py-func docutils literal notranslate"><span class="pre">neurocat.color.cmap()</span></code></p>
+<p>Myeline map:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">myelin</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/myeline.svg" class="align-center" src="../_images/myeline.svg" />
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a>psych_no_none``(from connectome workbench):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">psych_no_none</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/psych_no_none.svg" class="align-center" src="../_images/psych_no_none.svg" />
+<p>Hot map but without black</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">cmap</span><span class="o">.</span><span class="n">hot_no_black</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="../_images/hot_no_black.svg" class="align-center" src="../_images/hot_no_black.svg" />
+</section>
 </section>
 
 

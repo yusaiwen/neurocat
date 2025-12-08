@@ -2,4 +2,12 @@
 
 API Reference
 ===============
-:mod:`neurocat.plotting` - Plot brain
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   plotting
+   util
+   color
+   io

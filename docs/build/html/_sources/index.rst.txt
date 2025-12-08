@@ -16,5 +16,5 @@ Contents
    usage
    
    api
-   visulization.ipynb
+
 
