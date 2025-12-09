@@ -13,63 +13,68 @@ neurocat
     :target: https://opensource.org/license/mit
     :alt: License
 
-Description
------------
+Overview
+--------
 
-Neurocat is a Python package for neuroimaging data(especially **surface data**) processing by an ailurophile🐱. It provides utilities for surface visualization, color manipulation, data transfer between formats (e.g., CIFTI and GIFTI), I/O operations, and surface data handling. Key features include:
+Neurocat is a lightweight Python package for neuroimaging, with a focus on surface-based data. It offers utilities for visualization, color map creation and manipulation, format conversion (e.g., CIFTI and GIFTI), surface I/O, and other surface-specific data operations. The project was created by an ailurophile (cat-lover) and aims to be simple, flexible, and well-documented.
 
-- Surface data visualization (via ``neurocat.plotting``)
-- Color gradients and colormaps (via ``neurocat.color``)
-- Data transformation and medial wall removal (via ``neurocat.transfer``)
-- Utility functions for brain models and densities (via ``neurocat.util``)
-- Saving and loading neuroimaging files (via ``neurocat.io``)
+Key features
+------------
 
-Installation requirements
--------------------------
-Currently, ``neurocat`` works with Python 3.10+(the developer only test on 3.10). 
+- Surface visualization and plotting utilities (neurocat.plotting)
+- Colormap and gradient utilities (neurocat.color)
+- Data transformations and medial-wall handling for surface meshes (neurocat.transfer)
+- Utility functions for brain models and density estimation (neurocat.util)
+- File I/O for common neuroimaging surface formats (neurocat.io)
 
-You will also need to have Connectome Workbench installed and available on your path in order to use most of the transformation / resampling functionality of neuromaps.
+Requirements
+------------
+
+- Python 3.10 or newer (development and testing conducted on 3.10)
+- Connectome Workbench: required for ``neurocat.transfer.f2f`` function if you need. Remember to add ``wb_command`` to PATH environment.
+
+Linux-specific notes
+--------------------
+
+On Linux, you may need to install either vtk-egl (for systems with GPU support) or vtk-osmesa (for headless/CPU-only environments). These wheels are served from the VTK index rather than PyPI:
+
+.. code-block:: bash
+
+    # For systems with GPU-enabled headless rendering
+    pip install --extra-index-url https://wheels.vtk.org vtk-egl
+
+    # For headless / CPU-only rendering
+    pip install --extra-index-url https://wheels.vtk.org vtk-osmesa
 
 Installation
 ------------
 
-If you are using Linux, install vtk-egl first:
-
-.. code-block:: bash
-
-    pip install --extra-index-url https://wheels.vtk.org vtk-egl
-
-Then install neurocat:
+Install via pip from GitHub:
 
 .. code-block:: bash
 
     pip install git+https://github.com/yusaiwen/neurocat.git
 
-Usage
------
+Quick start
+-----------
 
-Import and use modules:
+Import the package in your Python project or interactive session to get started:
 
 .. code-block:: python
 
-    from neurocat.color import get_color_gradient
-    from neurocat.transfer import remove_mw
-    from neurocat.util import judge_density
-    from neurocat.io import save_cii
+    import neurocat
+    # See the documentation for examples and module-level usage.
 
-    # Example: Create a color gradient
-    gradient = get_color_gradient('#FF0000', '#0000FF', 10)
-
-    # Example: Remove medial wall from data
-    cleaned_data = remove_mw(data)
+For detailed usage, examples, and API documentation, visit the project documentation at:
+https://neurocat.readthedocs.io/en/latest/
 
 Contributing
 ------------
 
-Contributions are welcome! Please submit issues or pull requests on GitHub.
+Contributions are welcome! For development guidelines and contribution processes, please open issues or pull requests on GitHub and refer to the CONTRIBUTING file if present.
 
 License
 -------
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License — see the LICENSE file for details.
 

@@ -12,7 +12,7 @@ This module provides a streamlined interface for visualizing brain surface data.
   
 * ``draw_cortex`` – cortical data (fsLR surfaces, Schaefer/Glasser atlases)
 
-    * Data could be both in vertex space or parcellated space, the fucntion will map automatically
+    * Data could be both in vertex space or parcellated space, the function will map automatically
     * Medial wall will be automatically restored if the data lack
   
 * ``draw_subcortex_tian`` – subcortical data (`Tian 2020 atlas <https://www.nature.com/articles/s41593-020-00711-6>`_) 

@@ -9,7 +9,7 @@ The choice of the color map depends on the type of the data and the message to c
 Pre-defined Color Maps
 ----------------------
 
-For example, the gradient color map was desinged to highlight the **very high** and **very low** values, which corresponds to the information by functional gradient.
+For example, the gradient color map was designed to highlight the **very high** and **very low** values, which corresponds to the information by functional gradient.
 
 .. code-block:: python
 
